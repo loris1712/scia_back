@@ -5,26 +5,36 @@ const helmet = require("helmet");
 const compression = require("compression");
 const sequelize = require("./config/db");
 
-// Routes Folders
 const shipRoutes = require("./routes/shipRoutes");
 const authRoutes = require("./routes/authRoutes");
 const jobExecutionRoutes = require("./routes/jobExecutionRoutes");
+const elementRoutes = require("./routes/elementsRoutes");
+const profileRoutes = require("./routes/profileRoutes");
 
 const app = express();
 
-// Middlewares
-app.use(cors());
+const cookieParser = require("cookie-parser");
+
+app.use(cookieParser());
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+
 app.use(helmet());
 app.use(compression());
 app.use(express.json());
 
-// Routes API
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/ships", shipRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/jobs-executions", jobExecutionRoutes);
-
-// Sincronizziamo Sequelize con il database
+app.use("/api/element", elementRoutes);
+app.use("/api/profile", profileRoutes);
+ 
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))
     .catch(err => console.error("Errore di sincronizzazione:", err));

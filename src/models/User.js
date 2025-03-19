@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/db"); // Importa l'istanza Sequelize
+const sequelize = require("../config/db");
 
 const User = sequelize.define(
   "User",
@@ -13,10 +13,6 @@ const User = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-    role_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
     first_name: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -25,18 +21,23 @@ const User = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    license_activation_date: {
-      type: DataTypes.DATE,
-      allowNull: true,
+    profile_image: {
+      type: DataTypes.TEXT("long"),
+      allowNull: false,
     },
-    license_expiry_date: {
+    phone_number: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+    registration_date: {
       type: DataTypes.DATE,
-      allowNull: true,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
     tableName: "User",
-    timestamps: false, // Se la tabella non ha `createdAt` e `updatedAt`
+    timestamps: false,
   }
 );
 

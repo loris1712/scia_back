@@ -36,7 +36,11 @@ const UserLogin = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-  },
+    biometric_enabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+  }, 
   {
     tableName: "UserLogin",
     timestamps: false,
