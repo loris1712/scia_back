@@ -9,6 +9,7 @@ const UserLogin = require("./userLogin");
 const User = require("./user");
 const UserRole = require("./userRole.js");
 const Team = require("./team.js");
+const UserSettings = require("./userSettings.js");
 
 Job.hasMany(JobExecution, { foreignKey: "job_id" });
 JobExecution.belongsTo(Job, { foreignKey: "job_id" });
@@ -28,6 +29,6 @@ User.hasOne(Team, { as: "managedTeam", foreignKey: "team_leader_id" });
 User.belongsTo(Team, { as: "userTeam", foreignKey: "team_id" });
 Team.hasMany(User, { as: "teamMembers", foreignKey: "team_id" });
 
-const db = { sequelize, Job, Element, Ship, JobStatus, JobExecution, User, UserLogin, UserRole, Team };
+const db = { sequelize, Job, Element, Ship, JobStatus, JobExecution, User, UserLogin, UserRole, Team, UserSettings };
 
 module.exports = db;

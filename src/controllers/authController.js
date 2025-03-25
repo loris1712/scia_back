@@ -21,8 +21,7 @@ exports.loginWithEmail = async (req, res) => {
 
     const token = jwt.sign(
       { userId: userLogin.user_id, email: userLogin.email },
-      process.env.SECRET_KEY,
-      { expiresIn: "2h" }
+      process.env.SECRET_KEY
     );
 
     res.cookie("token", token, {
@@ -54,7 +53,7 @@ exports.loginWithPin = async (req, res) => {
       return res.status(401).json({ error: "PIN non valido o disabilitato." });
     }
 
-    const token = jwt.sign({ userId: userLogin.user.id }, process.env.SECRET_KEY, { expiresIn: "1h" });
+    const token = jwt.sign({ userId: userLogin.user.id }, process.env.SECRET_KEY);
 
     // ✅ Imposta il token nei cookie (identico al login con email)
     res.cookie("token", token, {
@@ -110,7 +109,7 @@ exports.forgotPassword = async (req, res) => {
     }
 
     // 15 minutes
-    const token = jwt.sign({ userId: user.user_id }, SECRET_KEY, { expiresIn: "15m" });
+    const token = jwt.sign({ userId: user.user_id }, SECRET_KEY);
 
     const resetLink = `http://localhost43000/reset-password?token=${token}`;
 

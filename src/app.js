@@ -10,6 +10,8 @@ const authRoutes = require("./routes/authRoutes");
 const jobExecutionRoutes = require("./routes/jobExecutionRoutes");
 const elementRoutes = require("./routes/elementsRoutes");
 const profileRoutes = require("./routes/profileRoutes");
+const maintenanceRoutes = require("./routes/maintenanceRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
 
 const app = express();
 
@@ -34,6 +36,8 @@ app.use("/api/auth", authRoutes);
 app.use("/jobs-executions", jobExecutionRoutes);
 app.use("/api/element", elementRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/settings", settingsRoutes);
  
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))
