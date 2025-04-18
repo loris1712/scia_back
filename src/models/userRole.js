@@ -23,7 +23,7 @@ const UserRole = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
-    },
+    },    
     rank: {
       type: DataTypes.STRING(100),
       allowNull: true,
@@ -31,7 +31,7 @@ const UserRole = sequelize.define(
     type: {
       type: DataTypes.STRING(100),
       allowNull: true,
-    },
+    }, 
   },
   {
     tableName: "UserRole",

@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database"); // Assicurati che il path sia corretto
+const sequelize = require("../config/db"); // Assicurati che il path sia corretto
 
 const RecurrencyType = sequelize.define(
   "RecurrencyType",

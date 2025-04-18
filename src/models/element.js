@@ -7,7 +7,7 @@ const Element = sequelize.define("Element", {
     element_model_id: { type: DataTypes.INTEGER },
     ship_id: { type: DataTypes.INTEGER, allowNull: false },
     name: { type: DataTypes.STRING, allowNull: false },
-    serial_number: { type: DataTypes.STRING, allowNull: false, unique: true },
+    serial_number: { type: DataTypes.STRING, allowNull: false },
     installation_date: { type: DataTypes.DATE },
     progressive_code: { type: DataTypes.INTEGER }
 }, {

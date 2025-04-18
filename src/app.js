@@ -12,6 +12,13 @@ const elementRoutes = require("./routes/elementsRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
+const spareRoutes = require("./routes/sparesRoutes");
+const checklistRoutes = require("./routes/checklistRoutes");
+const facilitiestRoutes = require("./routes/facilitiesRoutes");
+const cartRoutes = require("./routes/cartRoutes");
+const locationsRoutes = require("./routes/locationsRoutes");
+const shipFilesRoutes = require("./routes/shipFilesRoutes");
+const readingsRoutes = require("./routes/readingsRoutes");
 
 const app = express();
 
@@ -32,12 +39,19 @@ app.use(express.json());
 
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/ships", shipRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes); 
 app.use("/jobs-executions", jobExecutionRoutes);
 app.use("/api/element", elementRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/spare", spareRoutes);
+app.use("/api/checklist", checklistRoutes);
+app.use("/api/facilities", facilitiestRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/locations", locationsRoutes);
+app.use("/api/shipFiles", shipFilesRoutes);
+app.use("/api/readings", readingsRoutes);
  
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))

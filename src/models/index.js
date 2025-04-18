@@ -10,6 +10,20 @@ const User = require("./user");
 const UserRole = require("./userRole.js");
 const Team = require("./team.js");
 const UserSettings = require("./userSettings.js");
+const Spare = require("./spare.js"); 
+const RanksMarine = require("./RanksMarine.js"); 
+const Task = require("./task.js"); 
+const recurrencyType = require("./recurrencyType.js"); 
+const Facilities = require("./facilities.js"); 
+const Cart = require("./cart.js"); 
+const Location = require("./location.js"); 
+const Warehouses = require("./warehouses.js"); 
+const ShipFiles = require("./shipFile2.js");
+const Readings = require("./Reading.js");
+const ReadingsType = require("./ReadingsType.js");
+
+Facilities.hasMany(Facilities, { as: "subFacilities", foreignKey: "parent_id" });
+Facilities.belongsTo(Facilities, { as: "parentFacility", foreignKey: "parent_id" });
 
 Job.hasMany(JobExecution, { foreignKey: "job_id" });
 JobExecution.belongsTo(Job, { foreignKey: "job_id" });
@@ -29,6 +43,38 @@ User.hasOne(Team, { as: "managedTeam", foreignKey: "team_leader_id" });
 User.belongsTo(Team, { as: "userTeam", foreignKey: "team_id" });
 Team.hasMany(User, { as: "teamMembers", foreignKey: "team_id" });
 
-const db = { sequelize, Job, Element, Ship, JobStatus, JobExecution, User, UserLogin, UserRole, Team, UserSettings };
+Task.belongsTo(Element, { foreignKey: "element_id", as: "element" });
+Element.hasMany(Task, { foreignKey: "element_id" });
+
+Cart.belongsTo(Spare, { foreignKey: "spare_id" });
+Spare.hasMany(Cart, { foreignKey: "spare_id" });
+
+Location.belongsTo(Warehouses, {
+  foreignKey: "warehouse",
+  as: "warehouseInfo"
+});
+
+Warehouses.hasMany(Location, {
+  foreignKey: "warehouse",
+  as: "locations"
+});
+
+Spare.belongsTo(Warehouses, { foreignKey: "warehouse", as: "warehouseData" });
+Spare.belongsTo(Location, { foreignKey: "location", as: "locationData" });
+
+Readings.belongsTo(ReadingsType, {
+  foreignKey: 'reading_type',
+  as: 'type'
+});
+
+Readings.belongsTo(Element, {
+  foreignKey: "eswbs_id",
+  as: "element",
+});
+
+const db = { sequelize, Job, Element, Ship, JobStatus, 
+  JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
+  RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,
+  ShipFiles, Readings, ReadingsType };
 
 module.exports = db;

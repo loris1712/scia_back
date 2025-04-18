@@ -20,9 +20,9 @@ const UserLogin = sequelize.define(
       onDelete: "CASCADE",
     },
     email: {
-      type: DataTypes.STRING(255),
-      unique: true,
-      allowNull: true,
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true, // Mantieni UNICO, ma se già presente non verrà ricreato
     },
     password_hash: {
       type: DataTypes.STRING(255),
