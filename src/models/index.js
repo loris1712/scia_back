@@ -21,6 +21,9 @@ const Warehouses = require("./warehouses.js");
 const ShipFiles = require("./shipFile2.js");
 const Readings = require("./Reading.js");
 const ReadingsType = require("./ReadingsType.js");
+const Scans = require("./scan.js");
+
+// Relazioni con alias espliciti
 
 Facilities.hasMany(Facilities, { as: "subFacilities", foreignKey: "parent_id" });
 Facilities.belongsTo(Facilities, { as: "parentFacility", foreignKey: "parent_id" });
@@ -34,8 +37,8 @@ JobExecution.belongsTo(Element, { foreignKey: "element_eswbs_instance_id" });
 JobStatus.hasMany(JobExecution, { foreignKey: "state_id" });
 JobExecution.belongsTo(JobStatus, { foreignKey: "state_id" });
 
-Element.belongsTo(Ship, { foreignKey: "ship_id" });
-Ship.hasMany(Element, { foreignKey: "ship_id" });
+Element.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" }); // Alias 'ship' per questa associazione
+Ship.hasMany(Element, { foreignKey: "ship_id", as: "elements" }); // Alias 'elements' per questa associazione
 
 Team.belongsTo(User, { as: "leader", foreignKey: "team_leader_id" }); 
 User.hasOne(Team, { as: "managedTeam", foreignKey: "team_leader_id" });
@@ -72,9 +75,15 @@ Readings.belongsTo(Element, {
   as: "element",
 });
 
+Scans.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" }); // Alias 'ship' per questa associazione
+Ship.hasMany(Scans, { foreignKey: "ship_id", as: "scans" }); // Alias 'scans' per questa associazione
+
+Scans.belongsTo(Element, { foreignKey: "element_id", as: "element" });
+Element.hasMany(Scans, { foreignKey: "element_id", as: "scans" });
+
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
   RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,
-  ShipFiles, Readings, ReadingsType };
+  ShipFiles, Readings, ReadingsType, Scans };
 
 module.exports = db;
