@@ -7,6 +7,7 @@ const upload = multer({ storage: storage });
 
 
 router.get("/getProfile", profileController.getProfile);
+router.get("/getProfileById/:id", profileController.getProfileById);
 router.post("/updateProfile", profileController.updateProfile);
 router.post("/uploadProfileImage", upload.single("profileImage"), profileController.uploadProfileImage);
 router.get("/getRanks", profileController.getRanks);

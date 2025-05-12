@@ -22,6 +22,7 @@ const ShipFiles = require("./shipFile2.js");
 const Readings = require("./Reading.js");
 const ReadingsType = require("./ReadingsType.js");
 const Scans = require("./scan.js");
+const Failures = require("./failure.js");
 
 // Relazioni con alias espliciti
 
@@ -84,6 +85,6 @@ Element.hasMany(Scans, { foreignKey: "element_id", as: "scans" });
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
   RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,
-  ShipFiles, Readings, ReadingsType, Scans };
+  ShipFiles, Readings, ReadingsType, Scans, Failures };
 
 module.exports = db;

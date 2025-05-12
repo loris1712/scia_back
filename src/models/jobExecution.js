@@ -11,11 +11,15 @@ const JobExecution = sequelize.define("JobExecution", {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    recurrency_type_id: { type: DataTypes.INTEGER },
     state_id: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
     user_id: {
+        type: DataTypes.INTEGER
+    },
+    ship_id: {
         type: DataTypes.INTEGER
     },
     element_eswbs_instance_id: {

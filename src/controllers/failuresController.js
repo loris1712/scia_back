@@ -1,0 +1,58 @@
+const { Failures } = require("../models");
+
+exports.addFailure = async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      date,
+      gravity,
+      executionUserType,
+      userExecution,
+      partNumber,
+      customFields,
+    } = req.body;
+
+    // 🔍 Controlli base
+    if (!description || !date || !gravity || !executionUserType) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // ✅ Creazione della failure
+    const newFailure = await Failures.create({
+      title,
+      description,
+      date,
+      gravity,
+      executionUserType,
+      userExecution,
+      partNumber,
+      customFields,
+    });
+
+    return res.status(201).json({ message: "Failure created successfully", failure: newFailure });
+  } catch (error) {
+    console.error("Error adding failure:", error);
+    return res.status(500).json({ error: "Error creating failure" });
+  }
+};
+
+exports.getFailures = async (req, res) => {
+  try {
+    const { gravity, executionUserType } = req.query;
+
+    const whereClause = {};
+    if (gravity) whereClause.gravity = gravity;
+    if (executionUserType) whereClause.executionUserType = executionUserType;
+
+    const failures = await Failures.findAll({
+      where: whereClause,
+      order: [["date", "DESC"]],
+    });
+
+    return res.status(200).json({ failures });
+  } catch (error) {
+    console.error("Error fetching failures:", error);
+    return res.status(500).json({ error: "Error retrieving failures" });
+  }
+};

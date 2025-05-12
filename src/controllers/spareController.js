@@ -1,5 +1,27 @@
 const { Spare, Location, Warehouses } = require("../models");
 
+
+require('dotenv').config();
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const AWS = require('aws-sdk');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+
+const s3 = new AWS.S3();
+
+const BUCKET_NAME = 'scia-project-questit';
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
 exports.getSpare = async (req, res) => {
   try {
     const { name, serial_number } = req.query;
@@ -170,5 +192,113 @@ exports.fetchSpareById = async (req, res) => {
   } catch (error) {
     console.error("Error fetching spares:", error);
     res.status(500).json({ error: "Error fetching spares" });
+  }
+};
+
+exports.submitProduct = async (req, res) => {
+  try {
+    const {
+      quantity,
+      eswbs,
+      description,
+      ship_id,
+      user_id,
+      ean13,
+      partNumber,
+      originalName,
+      supplier,
+      supplierNcage,
+      manufacturerNcage,
+      manufacturerPartNumber,
+      price,
+      leadTime,
+      warehouse,
+      location,
+      stock,
+      image,
+    } = req.body;
+
+    console.log(req.body)
+
+    let locationRecord = await Location.findOne({
+      where: {
+        location: location,
+        ship_id: ship_id,
+        user_id: user_id
+      }
+    });
+
+    if (!locationRecord) {
+      locationRecord = await Location.create({
+        warehouse: warehouse,
+        location: location,
+        ship_id: ship_id,
+        user_id: user_id
+      });
+    }
+
+    const newLocationId = locationRecord.id;
+
+    const newSpare = await Spare.create({
+      name: originalName,
+      original_denomination: originalName,
+      serial_number: partNumber,
+      company: supplier,
+      NCAGE: manufacturerNcage,
+      NCAGE_supplier: supplierNcage,
+      price: price,
+      quantity:stock,
+      ean13,
+      eswbs,
+      description: description,
+      ship_id,
+      user_id: user_id,
+      warehouse,
+      image: image,
+      location: newLocationId
+    });
+
+    res.status(201).json({
+      message: "Spare created successfully",
+      spare: newSpare
+    });
+  } catch (error) {
+    console.error("Error submitting product:", error);
+    res.status(500).json({ error: "Error submitting product" });
+  }
+};
+
+exports.uploadProductImage = async (req, res) => {
+  const userId = req.body.userId;
+  const file = req.file;
+  const partNumber = req.body.partNumber;
+  const originalName = req.body.originalName;
+
+  console.log(req.file)
+
+  if (!file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  const fileName = `shipsFiles/${originalName}_${partNumber}.jpg`;
+
+  const params = {
+    Bucket: BUCKET_NAME,
+    Key: fileName,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+
+  try {
+    const uploadResult = await s3.upload(params).promise();
+    const imageUrl = uploadResult.Location;
+
+    res.status(200).json({
+      message: "Immagine caricata con successo e aggiornata nel DB",
+      url: imageUrl,
+    });
+  } catch (error) {
+    console.error("Errore upload su S3 o aggiornamento DB:", error);
+    res.status(500).json({ error: "Errore nel caricamento dell'immagine" });
   }
 };

@@ -26,6 +26,8 @@ exports.getReadings = async (req, res) => {
       ],
     });
     
+    console.log(readings)
+    
     res.status(200).json(readings);
   } catch (error) {
     console.error("Errore nel recupero delle letture:", error);

@@ -1,4 +1,4 @@
-require('dotenv').config(); // Carica le variabili d'ambiente prima di tutto
+require('dotenv').config();
 
 const { UserLogin, User, UserRole, Team, RanksMarine } = require("../models");
 const bcrypt = require("bcryptjs");
@@ -93,6 +93,93 @@ exports.getProfile = async (req, res) => {
       role: userRole ? userRole.role_name : "N/A",
       profileImage: profile_image,
       email: email,
+      phoneNumber: phone_number,
+      registrationDate: registration_date,
+      team: team ? { id: team.id, name: team.name } : null,
+      teamLeader: team?.teamLeader
+        ? { firstName: team.teamLeader.first_name, lastName: team.teamLeader.last_name }
+        : null,
+    });
+  } catch (error) {
+    console.error("Error verifying token:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+exports.getProfileById = async (req, res) => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const requestedUserId = req.params.id;
+
+  try {
+    jwt.verify(token, process.env.SECRET_KEY); // solo per validare, non serve più estrarre userId
+
+    const userLogin = await UserLogin.findOne({
+      where: { user_id: requestedUserId },
+      attributes: ["email"],
+      include: {
+        model: User,
+        as: "user",
+        attributes: [
+          "id",
+          "first_name",
+          "last_name",
+          "profile_image",
+          "phone_number",
+          "registration_date",
+          "team_id",
+        ],
+        include: [
+          {
+            model: Team,
+            as: "team",
+            attributes: ["id", "name", "team_leader_id"],
+            include: [
+              {
+                model: User,
+                as: "teamLeader",
+                attributes: ["first_name", "last_name"],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    if (!userLogin || !userLogin.user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const {
+      id,
+      first_name,
+      last_name,
+      profile_image,
+      phone_number,
+      registration_date,
+      team,
+    } = userLogin.user;
+    const { email } = userLogin;
+
+    const userRole = await UserRole.findOne({ where: { user_id: id } });
+
+    if (!userRole) {
+      return res.status(404).json({ error: "Role not found" });
+    }
+
+    res.json({
+      id,
+      firstName: first_name,
+      lastName: last_name,
+      rank: userRole.rank,
+      type: userRole.type,
+      role: userRole.role_name,
+      profileImage: profile_image,
+      email,
       phoneNumber: phone_number,
       registrationDate: registration_date,
       team: team ? { id: team.id, name: team.name } : null,

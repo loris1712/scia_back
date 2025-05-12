@@ -20,6 +20,7 @@ const locationsRoutes = require("./routes/locationsRoutes");
 const shipFilesRoutes = require("./routes/shipFilesRoutes");
 const readingsRoutes = require("./routes/readingsRoutes");
 const scansRoutes = require("./routes/scansRoutes");
+const failuresRoutes = require("./routes/failuresRoutes");
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/locations", locationsRoutes);
 app.use("/api/shipFiles", shipFilesRoutes);
 app.use("/api/readings", readingsRoutes);
 app.use("/api/scans", scansRoutes);
+app.use("/api/failures", failuresRoutes);
  
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))

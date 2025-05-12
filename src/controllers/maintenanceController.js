@@ -1,4 +1,4 @@
-const { RecurrencyType, JobExecution } = require("../models");
+const { recurrencyType, JobExecution } = require("../models");
 
 exports.getTypes = async (req, res) => {
   try {
@@ -9,7 +9,7 @@ exports.getTypes = async (req, res) => {
     }
 
     // 1️⃣ Prendi i tipi di manutenzione validi
-    const maintenanceTypes = await RecurrencyType.findAll({
+    const maintenanceTypes = await recurrencyType.findAll({
       where: {
         title: ["Manutenzioni ordinarie", "Manutenzioni straordinarie", "Manutenzioni annuali", "Manutenzioni extra"],
       },

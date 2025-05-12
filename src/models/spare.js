@@ -15,7 +15,15 @@ const Spare = sequelize.define('Spare', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  name: {
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  ean13: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  name: { 
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -36,6 +44,10 @@ const Spare = sequelize.define('Spare', {
     allowNull: true,
   },
   location: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  image: {
     type: DataTypes.STRING,
     allowNull: true,
   },
