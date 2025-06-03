@@ -2,7 +2,7 @@ const { UserLogin, User } = require("../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const SECRET_KEY = process.env.JWT_SECRET || "supersecretkey";
+const SECRET_KEY = "supersecretkey";
 
 exports.loginWithEmail = async (req, res) => {
   const { email, password } = req.body;
@@ -14,7 +14,13 @@ exports.loginWithEmail = async (req, res) => {
       return res.status(401).json({ error: "Credentials are not valid." });
     }
 
+  //const password2 = "123";
+  //const saltRounds = 10;
+  //const hash = await bcrypt.hash(password2, saltRounds);
+  //console.log(hash);
+
     const isMatch = await bcrypt.compare(password, userLogin.password_hash);
+
     if (!isMatch) {
       return res.status(401).json({ error: "Credentials are not valid." });
     }
@@ -37,7 +43,6 @@ exports.loginWithEmail = async (req, res) => {
     res.status(500).json({ error: "Error during login" });
   }
 };
-
 
 // Login with PIN
 exports.loginWithPin = async (req, res) => {

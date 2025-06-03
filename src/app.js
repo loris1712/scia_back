@@ -21,6 +21,7 @@ const shipFilesRoutes = require("./routes/shipFilesRoutes");
 const readingsRoutes = require("./routes/readingsRoutes");
 const scansRoutes = require("./routes/scansRoutes");
 const failuresRoutes = require("./routes/failuresRoutes");
+const uploadFilesRoutes = require("./routes/uploadFilesRoutes");
 
 const app = express();
 
@@ -30,7 +31,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     credentials: true,
   })
 );
@@ -56,6 +57,7 @@ app.use("/api/shipFiles", shipFilesRoutes);
 app.use("/api/readings", readingsRoutes);
 app.use("/api/scans", scansRoutes);
 app.use("/api/failures", failuresRoutes);
+app.use("/api/uploadFiles", uploadFilesRoutes);
  
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))
