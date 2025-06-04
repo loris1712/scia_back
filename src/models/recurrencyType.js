@@ -21,7 +21,11 @@ const RecurrencyType = sequelize.define(
     to_days: {
       type: DataTypes.INTEGER,
       allowNull: true,
-    }, 
+    },
+    RecurrencyType_Frequency: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },  
   },
   {
     tableName: "RecurrencyType",

@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { Task, recurrencyType, Element, PhotographicNote, VocalNote, TextNote } = require("../models");
+const { User, PhotographicNote, VocalNote, TextNote } = require("../models");
 const AWS = require('aws-sdk');
 const path = require('path');
 const fs = require('fs');
@@ -20,12 +20,8 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 exports.uploadPhoto = async (req, res) => {
-  const { failureId } = req.body;
+  const { failureId, authorId, type } = req.body;
   const file = req.file;
-
-  console.log(failureId)
-
-  console.log(file)
 
   if (!file) {
     return res.status(400).json({ error: "No photo uploaded" });
@@ -38,6 +34,7 @@ exports.uploadPhoto = async (req, res) => {
     Key: fileName,
     Body: file.buffer,
     ContentType: file.mimetype,
+    ACL: 'public-read'
   };
 
   try {
@@ -47,7 +44,9 @@ exports.uploadPhoto = async (req, res) => {
     const newNote = await PhotographicNote.create({
       failure_id: failureId,
       image_url: photoUrl,
-      timestamp: new Date(),
+      created_at: new Date(),
+      author: authorId,
+      type: type
     });
 
     res.status(201).json({
@@ -61,7 +60,7 @@ exports.uploadPhoto = async (req, res) => {
 };
 
 exports.uploadAudio = async (req, res) => {
-  const { failureId } = req.body;
+  const { failureId, authorId, type } = req.body;
   const file = req.file;
 
   if (!file) {
@@ -84,7 +83,9 @@ exports.uploadAudio = async (req, res) => {
     const newNote = await VocalNote.create({
       failure_id: failureId,
       audio_url: audioUrl,
-      timestamp: new Date(),
+      created_at: new Date(),
+      author: authorId,
+      type: type
     });
 
     res.status(201).json({
@@ -99,7 +100,7 @@ exports.uploadAudio = async (req, res) => {
 
 exports.uploadTextNote = async (req, res) => {
   try {
-    const { failureId, content } = req.body;
+    const { failureId, content, authorId, type } = req.body;
 
     if (!failureId || !content) {
       return res.status(400).json({ error: "failureId e content sono obbligatori" });
@@ -108,6 +109,8 @@ exports.uploadTextNote = async (req, res) => {
     const newTextNote = await TextNote.create({
       failure_id: failureId,
       text_field: content,
+      author: authorId,
+      type: type
     });
 
     res.status(201).json({
@@ -117,5 +120,89 @@ exports.uploadTextNote = async (req, res) => {
   } catch (error) {
     console.error("Errore nel salvataggio della nota testuale:", error);
     res.status(500).json({ error: "Errore nel salvataggio della nota testuale" });
+  }
+};
+
+exports.getAudios = async (req, res) => {
+  try {
+    const { failureId, type } = req.params;
+
+    if (!failureId) {
+      return res.status(400).json({ error: "failureId è obbligatorio" });
+    }
+
+    const audios = await VocalNote.findAll({
+      where: { failure_id: failureId, type: type },
+      include: [
+        {
+          model: User,
+          as: 'authorDetails',
+        }
+      ],
+    });
+
+    res.status(200).json({
+      message: "Note vocali recuperate con successo",
+      notes: audios,
+    });
+  } catch (error) {
+    console.error("Errore nel recupero delle note vocali:", error);
+    res.status(500).json({ error: "Errore nel recupero delle note vocali" });
+  }
+};
+
+exports.getTextNotes = async (req, res) => {
+  try {
+    const { failureId, type } = req.params;
+
+    if (!failureId) {
+      return res.status(400).json({ error: "failureId è obbligatorio" });
+    }
+
+    const texts = await TextNote.findAll({
+      where: { failure_id: failureId, type: type },
+      include: [
+        {
+          model: User,
+          as: 'authorDetails',
+        }
+      ],
+    });
+
+    res.status(200).json({
+      message: "Note testuali recuperate con successo",
+      notes: texts,
+    });
+  } catch (error) {
+    console.error("Errore nel recupero delle note testuali:", error);
+    res.status(500).json({ error: "Errore nel recupero delle note testuali" });
+  }
+};
+
+exports.getPhotos = async (req, res) => {
+  try {
+    const { failureId, type } = req.params;
+
+    if (!failureId) {
+      return res.status(400).json({ error: "failureId è obbligatorio" });
+    }
+
+    const photos = await PhotographicNote.findAll({
+      where: { failure_id: failureId, type: type },
+      include: [
+        {
+          model: User,
+          as: 'authorDetails',
+        }
+      ],
+    });
+
+    res.status(200).json({
+      message: "Note fotografiche recuperate con successo",
+      notes: photos,
+    });
+  } catch (error) {
+    console.error("Errore nel recupero delle note fotografiche:", error);
+    res.status(500).json({ error: "Errore nel recupero delle note fotografiche" });
   }
 };

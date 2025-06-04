@@ -16,6 +16,18 @@ const VocalNote = sequelize.define("VocalNote", {
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    author: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    type: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
 }, {
     tableName: "VocalNote",
     timestamps: false

@@ -12,7 +12,19 @@ const TextNote = sequelize.define("TextNote", {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    author: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
     text_field: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    type: {
       type: DataTypes.TEXT,
       allowNull: false,
     },

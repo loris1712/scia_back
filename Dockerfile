@@ -1,20 +1,20 @@
-# Use the official Node.js image as the base image
+# Usa un'immagine base leggera di Node
 FROM node:23.9-alpine
 
-# Set the working directory inside the container
+# Imposta la cartella di lavoro nel container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json to the working directory
+# Copia i file package.json e package-lock.json (se presente)
 COPY package*.json ./
 
-# Install the application dependencies
+# Installa le dipendenze
 RUN npm install
 
-# Copy the rest of the application files
+# Copia tutti i file del progetto nel container
 COPY . .
 
-# Expose the application port
+# Espone la porta su cui gira l'app (4000)
 EXPOSE 4000
 
-# Command to run the application
-CMD ["node", "dist/app"]
+# Comando per avviare l'app
+CMD ["node", "src/app.js"]

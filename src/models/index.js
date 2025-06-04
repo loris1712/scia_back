@@ -26,8 +26,8 @@ const Failures = require("./failure.js");
 const PhotographicNote = require("./PhotographicNote.js");
 const VocalNote = require("./VocalNote.js");
 const TextNote = require("./TextNote.js");
-
-// Relazioni con alias espliciti
+const MaintenanceType = require("./maintenanceType.js");
+const ElemetModel = require("./elementModel.js");
 
 Facilities.hasMany(Facilities, { as: "subFacilities", foreignKey: "parent_id" });
 Facilities.belongsTo(Facilities, { as: "parentFacility", foreignKey: "parent_id" });
@@ -79,15 +79,34 @@ Readings.belongsTo(Element, {
   as: "element",
 });
 
-Scans.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" }); // Alias 'ship' per questa associazione
-Ship.hasMany(Scans, { foreignKey: "ship_id", as: "scans" }); // Alias 'scans' per questa associazione
+Scans.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" }); 
+Ship.hasMany(Scans, { foreignKey: "ship_id", as: "scans" });
 
 Scans.belongsTo(Element, { foreignKey: "element_id", as: "element" });
 Element.hasMany(Scans, { foreignKey: "element_id", as: "scans" });
 
+PhotographicNote.belongsTo(User, { foreignKey: 'author', as: 'authorDetails' });
+User.hasMany(PhotographicNote, { foreignKey: 'author', as: 'photoNotes' }); 
+
+VocalNote.belongsTo(User, { foreignKey: 'author', as: 'authorDetails' });
+User.hasMany(VocalNote, { foreignKey: 'author', as: 'vocalNotes' });
+
+TextNote.belongsTo(User, { foreignKey: 'author', as: 'authorDetails' });
+User.hasMany(TextNote, { foreignKey: 'author', as: 'textNotes' });
+
+JobExecution.belongsTo(recurrencyType, { foreignKey: 'recurrency_type_id', as: 'recurrencyType' });
+JobExecution.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
+JobExecution.belongsTo(JobStatus, { foreignKey: 'state_id', as: 'status' });
+
+Element.belongsTo(ElemetModel, {
+  foreignKey: 'element_model_id',
+  as: 'element_model'
+});
+
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
   RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,
-  ShipFiles, Readings, ReadingsType, Scans, Failures, PhotographicNote, VocalNote, TextNote };
+  ShipFiles, Readings, ReadingsType, Scans, Failures, PhotographicNote, VocalNote, TextNote,
+MaintenanceType, ElemetModel };
 
 module.exports = db;

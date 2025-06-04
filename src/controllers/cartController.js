@@ -69,7 +69,7 @@ exports.updateProduct = async (req, res) => {
     const { id } = req.params;
     const { quantity, status } = req.body;
 
-    const cartItem = await Cart.findByPk(id);
+    const cartItem = await Cart.findOne({ where: { spare_id: id } });
 
     if (!cartItem) {
       return res.status(404).json({ error: "Prodotto non trovato nel carrello" });
@@ -90,7 +90,7 @@ exports.updateProduct = async (req, res) => {
 exports.removeProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const cartItem = await Cart.findByPk(id);
+    const cartItem = await Cart.findOne({ where: { spare_id: id } });
 
     if (!cartItem) {
       return res.status(404).json({ error: "Prodotto non trovato nel carrello" });

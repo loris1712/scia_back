@@ -27,58 +27,86 @@ exports.getSpare = async (req, res) => {
     const { name, serial_number } = req.query;
 
     const where = {};
-    if (name) where.name = name;
-    if (serial_number) where.serial_number = serial_number;
-    const spares = await Spare.findAll({ where, include: [
-      {
-        model: Warehouses,
-        as: "warehouseData",
-        attributes: ["id", "name", "icon_url"]
-      },
-      {
-        model: Location,
-        as: "locationData",
-        attributes: ["id", "location", "ship_id"]
-      }
-    ] });
+    if (name) where.Part_name = name;
+    if (serial_number) where.Serial_number = serial_number;
 
-    res.status(200).json({ spares });
+
+    const spares = await Spare.findAll({ where });
+
+    const enrichedSpares = await Promise.all(spares.map(async spare => {
+      const locationIds = spare.location
+        .split(',')
+        .map(id => parseInt(id.trim()))
+        .filter(id => !isNaN(id));
+
+      const locations = await Location.findAll({
+        where: { id: locationIds },
+        attributes: ['id', 'location', 'ship_id', 'warehouse']
+      });
+
+      const warehouseIds = [...new Set(locations.map(loc => loc.warehouse))];
+
+      const warehouses = await Warehouses.findAll({
+        where: { id: warehouseIds },
+        attributes: ['id', 'name', 'icon_url']
+      });
+
+      return {
+        ...spare.toJSON(),
+        locations,
+        warehouses
+      };
+    }));
+
+    res.status(200).json({ spares: enrichedSpares });
 
   } catch (error) {
     console.error("Error fetching spares:", error);
     res.status(500).json({ error: "Error fetching spares" });
   }
 };
-
+ 
 exports.getSpares = async (req, res) => {
   try {
     const { ship_id } = req.query;
-
     const where = {};
     if (ship_id) where.ship_id = ship_id;
 
-    const spares = await Spare.findAll({
-      where,
-      include: [
-        {
-          model: Warehouses,
-          as: "warehouseData",
-          attributes: ["id", "name", "icon_url"]
-        },
-        {
-          model: Location,
-          as: "locationData",
-          attributes: ["id", "location", "ship_id"]
-        }
-      ]
-    });
+    const spares = await Spare.findAll({ where });
 
-    res.status(200).json({ spares });
+    const enrichedSpares = await Promise.all(spares.map(async spare => {
+      const locationIds = spare.location
+        .split(',')
+        .map(id => parseInt(id.trim()))
+        .filter(id => !isNaN(id));
+
+      const locations = await Location.findAll({
+        where: { id: locationIds },
+        attributes: ['id', 'location', 'ship_id', 'warehouse']
+      });
+
+      const warehouseIds = [...new Set(locations.map(loc => loc.warehouse))];
+
+      const warehouses = await Warehouses.findAll({
+        where: { id: warehouseIds },
+        attributes: ['id', 'name', 'icon_url']
+      });
+
+      return {
+        ...spare.toJSON(),
+        locations,
+        warehouses
+      };
+    }));
+
+    res.status(200).json({ spares: enrichedSpares });
+
   } catch (error) {
     console.error("Error fetching spares:", error);
     res.status(500).json({ error: "Error fetching spares" });
   }
 };
+
 
 exports.updateSpare = async (req, res) => {
   try {

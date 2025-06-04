@@ -16,6 +16,18 @@ const PhotographicNote = sequelize.define("PhotographicNote", {
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    author: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    type: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
 }, {
     tableName: "PhotographicNote",
     timestamps: false
