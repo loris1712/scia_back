@@ -35,7 +35,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "http://52.59.162.108:3000"],
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://52.59.162.108:3000", "https://scia-frontend.vercel.app"],
     credentials: true,
   })
 ); 
