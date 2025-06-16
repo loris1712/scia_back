@@ -62,12 +62,11 @@ exports.loginWithPin = async (req, res) => {
     const token = jwt.sign({ userId: userLogin.user.id }, process.env.SECRET_KEY);
 
     res.cookie("token", token, {
-      httpOnly: false,
-      //secure: false,
-      //sameSite: "Lax",
+      httpOnly: true,
       sameSite: "none",
       secure: true,
       maxAge: 2 * 60 * 60 * 1000,
+      domain: ".onrender.com",
     });
 
     res.json({ message: "Login PIN effettuato" });
