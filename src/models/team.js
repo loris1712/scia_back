@@ -25,7 +25,7 @@ const Team = sequelize.define(
 );
 
 // Ora importiamo il modello User per creare le associazioni
-const User = require("./user");
+const User = require("./User");
 
 // Associazioni
 Team.belongsTo(User, { as: "teamLeader", foreignKey: "team_leader_id" });
