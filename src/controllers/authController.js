@@ -14,10 +14,10 @@ exports.loginWithEmail = async (req, res) => {
       return res.status(401).json({ error: "Credentials are not valid." });
     }
 
-    //const password2 = "123";
-    //const saltRounds = 10;
-    //const hash = await bcrypt.hash(password2, saltRounds);
-    //console.log(hash);
+  //const password2 = "123";
+  //const saltRounds = 10;
+  //const hash = await bcrypt.hash(password2, saltRounds);
+  //console.log(hash);
 
     const isMatch = await bcrypt.compare(password, userLogin.password_hash);
 
@@ -32,10 +32,8 @@ exports.loginWithEmail = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "Lax",
-      //sameSite: "none",
-      //secure: true,
+      secure: true,           // Richiesto su HTTPS
+      sameSite: "None",       // Per permettere cookie cross-origin
       maxAge: 2 * 60 * 60 * 1000,
     });
 
@@ -44,8 +42,9 @@ exports.loginWithEmail = async (req, res) => {
     console.error("Error during login:", error);
     res.status(500).json({ error: "Error during login" });
   }
-}; 
+};
 
+// Login with PIN
 exports.loginWithPin = async (req, res) => {
   const { pin } = req.body;
 
@@ -61,12 +60,12 @@ exports.loginWithPin = async (req, res) => {
 
     const token = jwt.sign({ userId: userLogin.user.id }, process.env.SECRET_KEY);
 
+    // ✅ Imposta il token nei cookie (identico al login con email)
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "none",
-      secure: true,
-      maxAge: 2 * 60 * 60 * 1000,
-      domain: ".onrender.com",
+      secure: false,
+      sameSite: "Lax",
+      maxAge: 2 * 60 * 60 * 1000, // 2 ore
     });
 
     res.json({ message: "Login PIN effettuato" });
@@ -102,6 +101,7 @@ exports.logout = (req, res) => {
   res.json({ message: "Logout successful" });
 };
 
+// Request to reset password
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
 
@@ -112,10 +112,12 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ error: "Email not found" });
     }
 
+    // 15 minutes
     const token = jwt.sign({ userId: user.user_id }, SECRET_KEY);
 
     const resetLink = `http://localhost:3000/reset-password?token=${token}`;
 
+    // Send email
     await transporter.sendMail({
       from: "noreply@yourapp.com",
       to: email,
@@ -130,6 +132,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+// Reset password
 exports.resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
 
@@ -154,7 +157,7 @@ exports.resetPassword = async (req, res) => {
 
 exports.getUserSecuritySettings = async (req, res) => {
   try {
-    const userId = req.user?.userId || req.body.userId || req.query.userId; 
+    const userId = req.user?.userId || req.body.userId || req.query.userId; // Leggiamo userId
 
     if (!userId) {
       return res.status(400).json({ error: "User ID is required" });
@@ -176,6 +179,8 @@ exports.getUserSecuritySettings = async (req, res) => {
   }
 };
 
+
+// Aggiorna le impostazioni di sicurezza
 exports.updateUserSecuritySettings = async (req, res) => {
   const { useBiometric, useQuickPin, pin, userId } = req.body;
 
