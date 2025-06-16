@@ -33,12 +33,24 @@ const cookieParser = require("cookie-parser");
 
 app.use(cookieParser());
 
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "http://52.59.162.108:3000", "https://scia-frontend.vercel.app"],
-    credentials: true,
-  })
-); 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://52.59.162.108:3000",
+  "https://scia-frontend.vercel.app"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS: " + origin));
+    }
+  },
+  credentials: true,
+}));
 
 app.use(helmet());
 app.use(compression());

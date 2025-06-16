@@ -62,7 +62,7 @@ exports.loginWithPin = async (req, res) => {
     const token = jwt.sign({ userId: userLogin.user.id }, process.env.SECRET_KEY);
 
     res.cookie("token", token, {
-      httpOnly: true,
+      httpOnly: false,
       //secure: false,
       //sameSite: "Lax",
       sameSite: "none",
