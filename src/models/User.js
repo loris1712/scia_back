@@ -34,6 +34,14 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    bot_id_ita: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    bot_id_ing: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
   },
   {
     tableName: "User",

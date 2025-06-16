@@ -1,12 +1,15 @@
 require('dotenv').config();
+var pjson = require('../../package.json');
+const logger = require('../../logger')
 
-const { UserLogin, User, UserRole, Team, RanksMarine } = require("../models");
+const { UserLogin, User, UserRole, Team, RanksMarine, Ship } = require("../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const AWS = require('aws-sdk');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -45,6 +48,8 @@ exports.getProfile = async (req, res) => {
           "phone_number",
           "registration_date",
           "team_id",
+          "bot_id_ita",
+          "bot_id_ing",
         ],
         include: [
           {
@@ -58,6 +63,11 @@ exports.getProfile = async (req, res) => {
                 attributes: ["first_name", "last_name"],
               },
             ],
+          },
+          {
+            model: Ship,
+            as: "ships", 
+            attributes: ["id", "ship_model_id", "fleet_id", "model_code", "unit_name", "unit_code", "launch_date", "delivery_date", "Side_ship_number"], 
           },
         ],
       },
@@ -75,6 +85,9 @@ exports.getProfile = async (req, res) => {
       phone_number,
       registration_date,
       team,
+      bot_id_ita,
+      bot_id_ing,
+      ships,
     } = userLogin.user;
     const { email } = userLogin;
 
@@ -95,11 +108,25 @@ exports.getProfile = async (req, res) => {
       email: email,
       phoneNumber: phone_number,
       registrationDate: registration_date,
+      bot_id_ing: bot_id_ing,
+      bot_id_ita: bot_id_ita,
       team: team ? { id: team.id, name: team.name } : null,
       teamLeader: team?.teamLeader
         ? { firstName: team.teamLeader.first_name, lastName: team.teamLeader.last_name }
-        : null,
+        : null, 
+      ships: ships.map((ship) => ({
+        id: ship.id,
+        shipModelId: ship.ship_model_id,
+        fleetId: ship.fleet_id,
+        modelCode: ship.model_code,
+        unitName: ship.unit_name,
+        unitCode: ship.unit_code,
+        launchDate: ship.launch_date,
+        deliveryDate: ship.delivery_date,
+        sideShipNumber: ship.Side_ship_number,
+      })),
     });
+
   } catch (error) {
     console.error("Error verifying token:", error);
     res.status(401).json({ error: "Invalid token" });
@@ -277,4 +304,39 @@ exports.getRanks = async (req, res) => {
     console.error('Errore nel recupero dei gradi:', error);
     res.status(500).json({ error: 'Errore nel recupero dei dati' });
   }
+};
+
+exports.getAPIbackend = async (req, res) => {
+
+  try {
+    res.json({
+      version: pjson.version,
+    });
+  } catch (error) {
+    console.error("Error verifying token:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+exports.getLogs = (req, res) => {
+  const logType = req.query.type === 'error' ? 'error.log' : 'combined.log';
+  const logPath = path.join(process.cwd(), logType);
+
+  fs.readFile(logPath, 'utf8', (err, data) => {
+    if (err) {
+      logger.error(`Impossibile leggere il file di log: ${logType}`, { error: err });
+      return res.status(500).json({ message: 'Errore durante la lettura dei log.', error: err.message });
+    }
+
+    try {
+      const logs = data
+        .split('\n')
+        .filter(line => line.trim() !== '') 
+        .map(line => JSON.parse(line));
+      res.json(logs.reverse());
+    } catch (parseErr) {
+      logger.error(`Errore nel parsing dei log: ${logType}`, { error: parseErr });
+      res.status(500).json({ message: 'Errore durante il parsing dei log.', error: parseErr.message });
+    }
+  });
 };

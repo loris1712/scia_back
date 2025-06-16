@@ -28,6 +28,7 @@ exports.addFailure = async (req, res) => {
       userExecution,
       partNumber,
       customFields,
+      ship_id
     });
 
     return res.status(201).json({ message: "Failure created successfully", failure: newFailure });
@@ -39,11 +40,12 @@ exports.addFailure = async (req, res) => {
 
 exports.getFailures = async (req, res) => {
   try {
-    const { gravity, executionUserType } = req.query;
+    const { gravity, executionUserType, ship_id } = req.query;
 
     const whereClause = {};
     if (gravity) whereClause.gravity = gravity;
     if (executionUserType) whereClause.executionUserType = executionUserType;
+    if (ship_id) whereClause.ship_id = ship_id;
 
     const failures = await Failures.findAll({
       where: whereClause,

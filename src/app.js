@@ -4,6 +4,10 @@ const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const sequelize = require("./config/db");
+const logger = require('../logger');
+
+logger.info('Applicazione avviata');
+logger.error('Errore di test');
 
 const shipRoutes = require("./routes/shipRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -31,10 +35,10 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://52.59.162.108:3000"],
     credentials: true,
   })
-);
+); 
 
 app.use(helmet());
 app.use(compression());

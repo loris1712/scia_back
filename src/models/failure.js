@@ -39,6 +39,10 @@ const Failures = sequelize.define('Failures', {
     type: DataTypes.JSONB,
     allowNull: true,
   },
+  ship_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 }, {
   tableName: "Failures",
   timestamps: false

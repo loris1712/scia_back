@@ -28,6 +28,10 @@ const VocalNote = require("./VocalNote.js");
 const TextNote = require("./TextNote.js");
 const MaintenanceType = require("./maintenanceType.js");
 const ElemetModel = require("./elementModel.js");
+const maintenanceLevel = require("./maintenanceLevel.js");
+const Maintenance_List = require("./maintenanceList.js");
+const StatusCommentsMaintenance = require("./StatusCommentsMaintenance.js");
+const maintenanceListSpareAdded = require("./maintenanceListSpareAdded.js");
 
 Facilities.hasMany(Facilities, { as: "subFacilities", foreignKey: "parent_id" });
 Facilities.belongsTo(Facilities, { as: "parentFacility", foreignKey: "parent_id" });
@@ -38,11 +42,11 @@ JobExecution.belongsTo(Job, { foreignKey: "job_id" });
 Element.hasMany(JobExecution, { foreignKey: "element_eswbs_instance_id" });
 JobExecution.belongsTo(Element, { foreignKey: "element_eswbs_instance_id" });
 
-JobStatus.hasMany(JobExecution, { foreignKey: "state_id" });
-JobExecution.belongsTo(JobStatus, { foreignKey: "state_id" });
+JobStatus.hasMany(JobExecution, { foreignKey: "status_id" });
+JobExecution.belongsTo(JobStatus, { foreignKey: "status_id" });
 
-Element.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" }); // Alias 'ship' per questa associazione
-Ship.hasMany(Element, { foreignKey: "ship_id", as: "elements" }); // Alias 'elements' per questa associazione
+Element.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" }); 
+Ship.hasMany(Element, { foreignKey: "ship_id", as: "elements" });
 
 Team.belongsTo(User, { as: "leader", foreignKey: "team_leader_id" }); 
 User.hasOne(Team, { as: "managedTeam", foreignKey: "team_leader_id" });
@@ -96,17 +100,45 @@ User.hasMany(TextNote, { foreignKey: 'author', as: 'textNotes' });
 
 JobExecution.belongsTo(recurrencyType, { foreignKey: 'recurrency_type_id', as: 'recurrencyType' });
 JobExecution.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
-JobExecution.belongsTo(JobStatus, { foreignKey: 'state_id', as: 'status' });
+JobExecution.belongsTo(JobStatus, { foreignKey: 'status_id', as: 'status' });
 
 Element.belongsTo(ElemetModel, {
   foreignKey: 'element_model_id',
   as: 'element_model'
 });
 
+Job.belongsTo(Maintenance_List, {
+  foreignKey: 'maintenance_list_id',
+  as: 'maintenance_list',
+});
+
+Maintenance_List.hasMany(Job, {
+  foreignKey: 'maintenance_list_id',
+  as: 'jobs',
+});
+
+Maintenance_List.belongsTo(maintenanceLevel, {
+    foreignKey: "MaintenanceLevel_ID",
+    as: "maintenance_level",
+});
+
+maintenanceLevel.hasMany(Maintenance_List, {
+    foreignKey: "MaintenanceLevel_ID",
+    as: "maintenance_lists",
+});
+
+JobExecution.hasMany(VocalNote, { foreignKey: "task_id", as: "vocalNotes" });
+JobExecution.hasMany(TextNote, { foreignKey: "task_id", as: "textNotes" });
+JobExecution.hasMany(PhotographicNote, { foreignKey: "task_id", as: "photographicNotes" });
+
+Ship.belongsTo(User, { foreignKey: "user_id", as: "owner" });
+User.hasMany(Ship, { foreignKey: "user_id", as: "ships" });   
+
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
   RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,
   ShipFiles, Readings, ReadingsType, Scans, Failures, PhotographicNote, VocalNote, TextNote,
-MaintenanceType, ElemetModel };
+  MaintenanceType, ElemetModel, maintenanceLevel, Maintenance_List,
+  StatusCommentsMaintenance, maintenanceListSpareAdded };
 
 module.exports = db;

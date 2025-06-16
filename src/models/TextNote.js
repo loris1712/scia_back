@@ -10,6 +10,10 @@ const TextNote = sequelize.define("TextNote", {
     },
     failure_id: {
       type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    task_id: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     author: {

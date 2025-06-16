@@ -10,6 +10,10 @@ const PhotographicNote = sequelize.define("PhotographicNote", {
     },
     failure_id: {
       type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    task_id: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     image_url: {

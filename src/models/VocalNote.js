@@ -10,6 +10,10 @@ const VocalNote = sequelize.define("VocalNote", {
     },
     failure_id: {
       type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    task_id: {
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     audio_url: {

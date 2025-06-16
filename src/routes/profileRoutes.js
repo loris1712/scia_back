@@ -11,5 +11,7 @@ router.get("/getProfileById/:id", profileController.getProfileById);
 router.post("/updateProfile", profileController.updateProfile);
 router.post("/uploadProfileImage", upload.single("profileImage"), profileController.uploadProfileImage);
 router.get("/getRanks", profileController.getRanks);
+router.get("/getAPIbackend", profileController.getAPIbackend);
+router.get("/getLogs", profileController.getLogs);
 
 module.exports = router;   

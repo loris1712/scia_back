@@ -63,7 +63,7 @@ exports.loginWithPin = async (req, res) => {
     // ✅ Imposta il token nei cookie (identico al login con email)
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "Lax",
       maxAge: 2 * 60 * 60 * 1000, // 2 ore
     });
@@ -75,7 +75,6 @@ exports.loginWithPin = async (req, res) => {
   }
 };
 
-// Set or update PIN
 exports.setPin = async (req, res) => {
   const { email, pin } = req.body;
 

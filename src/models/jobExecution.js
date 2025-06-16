@@ -11,7 +11,7 @@ const JobExecution = sequelize.define("JobExecution", {
     type: DataTypes.INTEGER,
     allowNull: true
   },
-  state_id: {
+  status_id: {
     type: DataTypes.INTEGER,
     allowNull: true
   },
@@ -50,7 +50,11 @@ const JobExecution = sequelize.define("JobExecution", {
   ship_id: {
     type: DataTypes.INTEGER,
     allowNull: true
-  }
+  },
+  execution_state: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
 }, {
   tableName: "JobExecution",
   timestamps: false

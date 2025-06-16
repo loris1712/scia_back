@@ -9,9 +9,11 @@ const Ship = sequelize.define("Ship", {
     fleet_id: { type: DataTypes.INTEGER },
     model_code: { type: DataTypes.STRING },
     unit_name: { type: DataTypes.STRING, allowNull: false },
-    unit_code: { type: DataTypes.INTEGER },
+    unit_code: { type: DataTypes.STRING },
     launch_date: { type: DataTypes.DATE },
-    delivery_date: { type: DataTypes.DATE }
+    delivery_date: { type: DataTypes.DATE },
+    Side_ship_number: { type: DataTypes.STRING(255) },
+    user_id: { type: DataTypes.INTEGER }
 }, {
     tableName: "Ship",
     timestamps: false

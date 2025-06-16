@@ -12,5 +12,6 @@ router.put("/moveSpare/:id", spareController.moveSpare);
 router.get("/fetchSpareById", spareController.fetchSpareById);
 router.post("/submitProduct", spareController.submitProduct);
 router.post("/uploadProductImage",upload.single("file"), spareController.uploadProductImage);
+router.post("/:maintenanceList_id/spares",upload.single("file"), spareController.addSpareMaintenanceList);
 
 module.exports = router;

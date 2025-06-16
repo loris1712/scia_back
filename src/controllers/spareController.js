@@ -1,5 +1,5 @@
-const { Spare, Location, Warehouses } = require("../models");
-
+const { Spare, Location, Warehouses, maintenanceListSpareAdded } = require("../models");
+const { Op } = require("sequelize");
 
 require('dotenv').config();
 const bcrypt = require("bcryptjs");
@@ -107,7 +107,6 @@ exports.getSpares = async (req, res) => {
   }
 };
 
-
 exports.updateSpare = async (req, res) => {
   try {
     const { id } = req.params;
@@ -202,18 +201,34 @@ exports.fetchSpareById = async (req, res) => {
     if (ean13) where.ean13 = ean13;
     if (partNumber) where.serial_number = partNumber;
     if (eswbsSearch) where.eswbsSearch = eswbsSearch;
-    const spares = await Spare.findAll({ where, include: [
-      {
-        model: Warehouses,
-        as: "warehouseData",
-        attributes: ["id", "name", "icon_url"]
-      },
-      {
-        model: Location,
-        as: "locationData",
+
+    const spares = await Spare.findAll({
+      where,
+      include: [
+        {
+          model: Warehouses,
+          as: "warehouseData",
+          attributes: ["id", "name", "icon_url"],
+        }
+      ]
+    });
+
+    for (const spare of spares) {
+      const locationIds = typeof spare.location === "string"
+        ? spare.location.split(",").map(id => parseInt(id.trim(), 10))
+        : [];
+
+      const locations = await Location.findAll({
+        where: {
+          id: {
+            [Op.in]: locationIds
+          }
+        },
         attributes: ["id", "location", "ship_id"]
-      }
-    ] });
+      });
+
+      spare.dataValues.locationData = locations;
+    }
 
     res.status(200).json({ spares });
 
@@ -328,5 +343,52 @@ exports.uploadProductImage = async (req, res) => {
   } catch (error) {
     console.error("Errore upload su S3 o aggiornamento DB:", error);
     res.status(500).json({ error: "Errore nel caricamento dell'immagine" });
+  }
+};
+
+const uploadImageToS3 = async (file, originalName, partNumber) => {
+  if (!file) {
+    throw new Error("No file uploaded");
+  }
+
+  const fileName = `shipsFiles/${originalName}_${partNumber}.jpg`;
+
+  const params = {
+    Bucket: BUCKET_NAME,
+    Key: fileName,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+
+  const uploadResult = await s3.upload(params).promise();
+  return uploadResult.Location; // imageUrl
+};
+
+exports.addSpareMaintenanceList = async (req, res) => {
+  const { brand, model, part_number, description, maintenanceList_id } = req.body;
+  const file = req.file;
+
+  try {
+    let photo_url = null;
+    if (file) {
+      photo_url = await uploadImageToS3(file, brand, part_number);
+    }
+
+    const newEntry = await maintenanceListSpareAdded.create({
+      brand,
+      model,
+      part_number,
+      description,
+      maintenanceList_id,
+      photo_url,
+    });
+
+    res.status(201).json({
+      message: "Elemento aggiunto con successo alla Maintenance List",
+      data: newEntry,
+    });
+  } catch (error) {
+    console.error("Errore durante l'aggiunta alla lista:", error);
+    res.status(500).json({ error: error.message });
   }
 };

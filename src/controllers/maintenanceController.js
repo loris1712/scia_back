@@ -1,4 +1,5 @@
-const { recurrencyType, JobExecution, Job, JobStatus, Element, ElemetModel } = require("../models");
+const { recurrencyType, maintenanceLevel, Maintenance_List,
+  JobExecution, Job, JobStatus, Element, ElemetModel, StatusCommentsMaintenance, VocalNote, TextNote, PhotographicNote } = require("../models");
 const { Op } = require("sequelize");
 
 exports.getTypes = async (req, res) => {
@@ -90,6 +91,98 @@ exports.getJobs = async (req, res) => {
         {
           model: Job,
           as: 'job',
+          include: [
+            {
+              model: Maintenance_List,
+              as: 'maintenance_list',
+              include: [
+                {
+                  model: maintenanceLevel,
+                  as: 'maintenance_level',
+                }
+              ]
+            }
+          ]
+        },
+        {
+          model: JobStatus,
+          as: 'status',
+        },
+        {
+          model: Element,
+          as: 'Element',
+          include: [
+            {
+              model: ElemetModel,
+              as: 'element_model',
+            }
+          ],
+        },
+        {
+          model: VocalNote,
+          as: "vocalNotes",
+          where: { type: "maintenance" },
+          required: false, 
+        },
+        {
+          model: TextNote,
+          as: "textNotes",
+          where: { type: "maintenance" },
+          required: false,
+        },
+        {
+          model: PhotographicNote,
+          as: "photographicNotes",
+          where: { type: "maintenance" },
+          required: false,
+        }
+      ],
+    });
+
+
+    res.status(200).json({ jobs });
+
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ error: "Error fetching jobs" });
+  }
+};
+
+exports.getJob = async (req, res) => {
+  try {
+    const { taskId } = req.query;
+
+    if (!taskId) {
+      return res.status(400).json({ error: "Missing taskId" });
+    }
+
+    const whereClause = {
+      id: taskId,
+    };
+
+    const jobs = await JobExecution.findAll({
+      where: whereClause,
+      order: [["ending_date", "ASC"]],
+      include: [
+        {
+          model: recurrencyType,
+          as: 'recurrencyType',
+        },
+        {
+          model: Job,
+          as: 'job',
+          include: [
+            {
+              model: Maintenance_List,
+              as: 'maintenance_list',
+              include: [
+                {
+                  model: maintenanceLevel,
+                  as: 'maintenance_level',
+                }
+              ]
+            }
+          ]
         },
         {
           model: JobStatus,
@@ -113,5 +206,136 @@ exports.getJobs = async (req, res) => {
   } catch (error) {
     console.error("Error fetching jobs:", error);
     res.status(500).json({ error: "Error fetching jobs" });
+  }
+};
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const jobExecutionId = req.params.id;
+    const { status_id } = req.body;
+
+    if (!status_id || ![1, 2, 3].includes(Number(status_id))) {
+      return res.status(400).json({ error: "Invalid or missing status_id. Allowed values: 1 (Attivo), 2 (In pausa), 3 (Non attivo)" });
+    }
+
+    const jobExecution = await JobExecution.findByPk(jobExecutionId);
+
+    if (!jobExecution) {
+      return res.status(404).json({ error: "JobExecution not found" });
+    }
+
+    jobExecution.status_id = status_id;
+    await jobExecution.save();
+
+    res.status(200).json({ message: "Status updated successfully", jobExecution });
+
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ error: "Error updating status" });
+  }
+};
+
+exports.saveStatusComment = async (req, res) => {
+  try {
+    const jobExecutionId = req.params.id;
+    const {
+      date,
+      date_flag,
+      reason,
+      only_this,
+      all_from_this_product,
+      old_status_id,
+      new_status_id,
+    } = req.body;
+
+    if (!new_status_id || ![1, 2, 3].includes(Number(new_status_id))) {
+      return res.status(400).json({
+        error: "Invalid or missing new_status_id. Allowed values: 1 (Attivo), 2 (In pausa), 3 (Non attivo)",
+      });
+    }
+
+    const jobExecution = await JobExecution.findByPk(jobExecutionId);
+    if (!jobExecution) {
+      return res.status(404).json({ error: "JobExecution not found" });
+    }
+
+    // Aggiorna stato jobExecution
+    jobExecution.status_id = new_status_id;
+    await jobExecution.save();
+
+    // Salva commento
+    await StatusCommentsMaintenance.create({
+      maintenance_id: jobExecutionId,
+      date: date || new Date(),
+      date_flag: date_flag || null,
+      reason: reason || null,
+      only_this: only_this || null,
+      all_from_this_product: all_from_this_product || null,
+      old_status_id: old_status_id || jobExecution.status_id, // fallback
+      new_status_id,
+    });
+
+    res.status(200).json({
+      message: "Status and comment saved successfully",
+      jobExecution,
+    });
+  } catch (error) {
+    console.error("Error updating status and saving comment:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.reportAnomaly = async (req, res) => {
+  try {
+    const jobExecutionId = req.params.id;
+    const { mark } = req.body;
+
+    if (!mark || ![1, 2, 3].includes(Number(mark))) {
+      return res.status(400).json({ error: "Invalid or missing status_id. Allowed values: 1 (Attivo), 2 (In pausa), 3 (Non attivo)" });
+    }
+
+    const jobExecution = await JobExecution.findByPk(jobExecutionId);
+
+    if (!jobExecution) {
+      return res.status(404).json({ error: "JobExecution not found" });
+    }
+
+    jobExecution.execution_state = mark;
+    await jobExecution.save();
+
+    res.status(200).json({ message: "Status updated successfully", jobExecution });
+
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ error: "Error updating status" });
+  }
+};
+
+exports.markAsOk = async (req, res) => {
+  try {
+    const jobExecutionId = req.params.id;
+    const mark = 1;
+    const { brand, model, part_number, description, maintenanceList_id } = req.body;
+
+    if (!mark || ![1, 2, 3].includes(Number(mark))) {
+      return res.status(400).json({ error: "Invalid or missing status_id. Allowed values: 1 (Attivo), 2 (In pausa), 3 (Non attivo)" });
+    }
+
+    const jobExecution = await JobExecution.findByPk(jobExecutionId);
+
+    if (!jobExecution) {
+      return res.status(404).json({ error: "JobExecution not found" });
+    }
+
+    Personnel_ID
+
+    jobExecution.execution_state = mark;
+    await jobExecution.save();
+
+    res.status(200).json({ message: "Status updated successfully", jobExecution });
+
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ error: "Error updating status" });
   }
 };
