@@ -42,7 +42,7 @@ exports.loginWithEmail = async (req, res) => {
     console.error("Error during login:", error);
     res.status(500).json({ error: "Error during login" });
   }
-};
+}; 
 
 // Login with PIN
 exports.loginWithPin = async (req, res) => {
@@ -67,6 +67,10 @@ exports.loginWithPin = async (req, res) => {
       sameSite: "Lax",
       maxAge: 2 * 60 * 60 * 1000, // 2 ore
     });
+
+    console.log(res)
+
+    return
 
     res.json({ message: "Login PIN effettuato" });
   } catch (error) {
@@ -115,7 +119,7 @@ exports.forgotPassword = async (req, res) => {
     // 15 minutes
     const token = jwt.sign({ userId: user.user_id }, SECRET_KEY);
 
-    const resetLink = `http://localhost43000/reset-password?token=${token}`;
+    const resetLink = `http://localhost:3000/reset-password?token=${token}`;
 
     // Send email
     await transporter.sendMail({
