@@ -25,11 +25,14 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 exports.getProfile = async (req, res) => {
-  const token = req.cookies.token;
+  // Prendi token da header Authorization (formato: "Bearer <token>")
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized" });
-  } 
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized: Token missing" });
+  }
+
+  const token = authHeader.split(" ")[1]; // prendi solo il token
 
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
@@ -66,8 +69,18 @@ exports.getProfile = async (req, res) => {
           },
           {
             model: Ship,
-            as: "ships", 
-            attributes: ["id", "ship_model_id", "fleet_id", "model_code", "unit_name", "unit_code", "launch_date", "delivery_date", "Side_ship_number"], 
+            as: "ships",
+            attributes: [
+              "id",
+              "ship_model_id",
+              "fleet_id",
+              "model_code",
+              "unit_name",
+              "unit_code",
+              "launch_date",
+              "delivery_date",
+              "Side_ship_number",
+            ],
           },
         ],
       },
@@ -98,22 +111,22 @@ exports.getProfile = async (req, res) => {
     }
 
     res.json({
-      id: id,
+      id,
       firstName: first_name,
       lastName: last_name,
-      rank: userRole ? userRole.rank : null,
-      type: userRole ? userRole.type : null,
-      role: userRole ? userRole.role_name : "N/A",
+      rank: userRole.rank,
+      type: userRole.type,
+      role: userRole.role_name || "N/A",
       profileImage: profile_image,
-      email: email,
+      email,
       phoneNumber: phone_number,
       registrationDate: registration_date,
-      bot_id_ing: bot_id_ing,
-      bot_id_ita: bot_id_ita,
+      bot_id_ing,
+      bot_id_ita,
       team: team ? { id: team.id, name: team.name } : null,
       teamLeader: team?.teamLeader
         ? { firstName: team.teamLeader.first_name, lastName: team.teamLeader.last_name }
-        : null, 
+        : null,
       ships: ships.map((ship) => ({
         id: ship.id,
         shipModelId: ship.ship_model_id,
@@ -126,7 +139,6 @@ exports.getProfile = async (req, res) => {
         sideShipNumber: ship.Side_ship_number,
       })),
     });
-
   } catch (error) {
     console.error("Error verifying token:", error);
     res.status(401).json({ error: "Invalid token" });
@@ -134,7 +146,8 @@ exports.getProfile = async (req, res) => {
 };
 
 exports.getProfileById = async (req, res) => {
-  const token = req.cookies.token;
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
 
   if (!token) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -143,7 +156,7 @@ exports.getProfileById = async (req, res) => {
   const requestedUserId = req.params.id;
 
   try {
-    jwt.verify(token, process.env.SECRET_KEY); // solo per validare, non serve più estrarre userId
+    const decoded = jwt.verify(token, process.env.SECRET_KEY); // puoi usare decoded.userId se vuoi limitare accesso
 
     const userLogin = await UserLogin.findOne({
       where: { user_id: requestedUserId },
