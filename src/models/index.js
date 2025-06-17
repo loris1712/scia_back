@@ -132,7 +132,9 @@ JobExecution.hasMany(TextNote, { foreignKey: "task_id", as: "textNotes" });
 JobExecution.hasMany(PhotographicNote, { foreignKey: "task_id", as: "photographicNotes" });
 
 Ship.belongsTo(User, { foreignKey: "user_id", as: "owner" });
-User.hasMany(Ship, { foreignKey: "user_id", as: "ships" });   
+User.hasMany(Ship, { foreignKey: "user_id", as: "ships" });
+
+Spare.belongsTo(ElemetModel, { foreignKey: 'element_model_id', as: 'elementModel' });
 
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 

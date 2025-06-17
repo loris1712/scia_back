@@ -1,4 +1,4 @@
-const { Spare, Location, Warehouses, maintenanceListSpareAdded } = require("../models");
+const { Spare, Location, Warehouses, maintenanceListSpareAdded, ElemetModel } = require("../models");
 const { Op } = require("sequelize");
 
 require('dotenv').config();
@@ -30,14 +30,21 @@ exports.getSpare = async (req, res) => {
     if (name) where.Part_name = name;
     if (serial_number) where.Serial_number = serial_number;
 
-
-    const spares = await Spare.findAll({ where });
+    const spares = await Spare.findAll({
+      where,
+      include: [
+        {
+          model: ElemetModel,
+          as: 'elementModel', // Assicurati che l'alias corrisponda a quello definito
+        }
+      ]
+    });
 
     const enrichedSpares = await Promise.all(spares.map(async spare => {
       const locationIds = spare.location
-        .split(',')
+        ?.split(',')
         .map(id => parseInt(id.trim()))
-        .filter(id => !isNaN(id));
+        .filter(id => !isNaN(id)) || [];
 
       const locations = await Location.findAll({
         where: { id: locationIds },
@@ -53,6 +60,7 @@ exports.getSpare = async (req, res) => {
 
       return {
         ...spare.toJSON(),
+        elementModel: spare.elementModel,
         locations,
         warehouses
       };
@@ -74,15 +82,21 @@ exports.getSpares = async (req, res) => {
       return res.status(400).json({ error: "ship_id is required" });
     }
 
-    const where = { ship_id };
-
-    const spares = await Spare.findAll({ where });
+    const spares = await Spare.findAll({
+      where: { ship_id },
+      include: [
+        {
+          model: ElemetModel,
+          as: 'elementModel',
+        }
+      ]
+    });
 
     const enrichedSpares = await Promise.all(spares.map(async spare => {
       const locationIds = spare.location
-        .split(',')
+        ?.split(',')
         .map(id => parseInt(id.trim()))
-        .filter(id => !isNaN(id));
+        .filter(id => !isNaN(id)) || [];
 
       const locations = await Location.findAll({
         where: { id: locationIds },
@@ -98,6 +112,7 @@ exports.getSpares = async (req, res) => {
 
       return {
         ...spare.toJSON(),
+        elementModel: spare.elementModel,
         locations,
         warehouses
       };
