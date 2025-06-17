@@ -31,9 +31,8 @@ exports.loginWithEmail = async (req, res) => {
     );
 
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,           // Richiesto su HTTPS
-      sameSite: "None",       // Per permettere cookie cross-origin
+      sameSite: "None",     
+      secure: true,        
       maxAge: 2 * 60 * 60 * 1000,
     });
 
@@ -62,10 +61,9 @@ exports.loginWithPin = async (req, res) => {
 
     // ✅ Imposta il token nei cookie (identico al login con email)
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "Lax",
-      maxAge: 2 * 60 * 60 * 1000, // 2 ore
+      sameSite: "None",     
+      secure: true,        
+      maxAge: 2 * 60 * 60 * 1000,
     });
 
     res.json({ message: "Login PIN effettuato" });
