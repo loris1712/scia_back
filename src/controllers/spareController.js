@@ -69,8 +69,12 @@ exports.getSpare = async (req, res) => {
 exports.getSpares = async (req, res) => {
   try {
     const { ship_id } = req.query;
-    const where = {};
-    if (ship_id) where.ship_id = ship_id;
+
+    if (!ship_id) {
+      return res.status(400).json({ error: "ship_id is required" });
+    }
+
+    const where = { ship_id };
 
     const spares = await Spare.findAll({ where });
 
