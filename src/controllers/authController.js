@@ -253,8 +253,6 @@ exports.getUserSecuritySettings = async (req, res) => {
   }
 };
 
-
-// Aggiorna le impostazioni di sicurezza
 exports.updateUserSecuritySettings = async (req, res) => {
   const { useBiometric, useQuickPin, pin, userId } = req.body;
 
