@@ -53,6 +53,7 @@ exports.getProfile = async (req, res) => {
           "team_id",
           "bot_id_ita",
           "bot_id_ing",
+          "bot_id_esp",
         ],
         include: [
           {
@@ -100,6 +101,7 @@ exports.getProfile = async (req, res) => {
       team,
       bot_id_ita,
       bot_id_ing,
+      bot_id_esp,
       ships,
     } = userLogin.user;
     const { email } = userLogin;
@@ -123,6 +125,7 @@ exports.getProfile = async (req, res) => {
       registrationDate: registration_date,
       bot_id_ing,
       bot_id_ita,
+      bot_id_esp,
       team: team ? { id: team.id, name: team.name } : null,
       teamLeader: team?.teamLeader
         ? { firstName: team.teamLeader.first_name, lastName: team.teamLeader.last_name }

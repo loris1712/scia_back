@@ -42,6 +42,10 @@ const User = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+    bot_id_esp: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
   },
   {
     tableName: "User",
