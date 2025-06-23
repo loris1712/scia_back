@@ -1,10 +1,12 @@
 require('dotenv').config();
 
-const { User, PhotographicNote, VocalNote, TextNote } = require("../models");
+const { User, PhotographicNote } = require("../models");
 const AWS = require('aws-sdk');
-const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+
+const BUCKET_NAME = 'scia-project-questit';
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -14,10 +16,17 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-const BUCKET_NAME = 'scia-project-questit';
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+exports.upload = upload;
 
 exports.uploadPhoto = async (req, res) => {
   const { failureId, authorId, type } = req.body;
@@ -34,16 +43,15 @@ exports.uploadPhoto = async (req, res) => {
     Key: fileName,
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: 'public-read'
+    // ACL rimosso perché il bucket è privato
   };
 
   try {
-    const uploadResult = await s3.upload(params).promise();
-    const photoUrl = uploadResult.Location;
+    await s3.upload(params).promise();
 
     const newNote = await PhotographicNote.create({
       failure_id: failureId,
-      image_url: photoUrl,
+      image_url: fileName, // Salviamo solo la Key
       created_at: new Date(),
       author: authorId,
       type: type
@@ -58,6 +66,51 @@ exports.uploadPhoto = async (req, res) => {
     res.status(500).json({ error: "Errore nel caricamento della nota fotografica" });
   }
 };
+
+exports.getPhotos = async (req, res) => {
+  try {
+    const { failureId, type } = req.params;
+
+    if (!failureId || !type) {
+      return res.status(400).json({ error: "failureId e type sono obbligatori" });
+    }
+
+    const photos = await PhotographicNote.findAll({
+      where: { failure_id: failureId, type: type },
+      include: [
+        {
+          model: User,
+          as: 'authorDetails',
+        }
+      ],
+    });
+
+    const signedPhotos = await Promise.all(photos.map(async (photo) => {
+      const key = photo.image_url; // è già la key S3 salvata
+
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+      });
+
+      const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 ora
+
+      return {
+        ...photo.toJSON(),
+        signedUrl,
+      };
+    }));
+
+    res.status(200).json({
+      message: "Note fotografiche recuperate con successo",
+      notes: signedPhotos,
+    });
+  } catch (error) {
+    console.error("Errore nel recupero delle note fotografiche:", error);
+    res.status(500).json({ error: "Errore nel recupero delle note fotografiche" });
+  }
+};
+
 
 exports.uploadAudio = async (req, res) => {
   const { failureId, authorId, type } = req.body;
@@ -179,37 +232,6 @@ exports.getTextNotes = async (req, res) => {
     res.status(500).json({ error: "Errore nel recupero delle note testuali" });
   }
 };
-
-exports.getPhotos = async (req, res) => {
-  try {
-    const { failureId, type } = req.params;
-
-    if (!failureId) {
-      return res.status(400).json({ error: "failureId è obbligatorio" });
-    }
-
-    const photos = await PhotographicNote.findAll({
-      where: { failure_id: failureId, type: type },
-      include: [
-        {
-          model: User,
-          as: 'authorDetails',
-        }
-      ],
-    });
-
-    res.status(200).json({
-      message: "Note fotografiche recuperate con successo",
-      notes: photos,
-    });
-  } catch (error) {
-    console.error("Errore nel recupero delle note fotografiche:", error);
-    res.status(500).json({ error: "Errore nel recupero delle note fotografiche" });
-  }
-};
-
-
-//General
 
 exports.uploadPhotoGeneral = async (req, res) => {
   const { failureId, authorId, type } = req.body;

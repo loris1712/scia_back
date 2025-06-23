@@ -103,10 +103,7 @@ exports.loginWithPin = async (req, res) => {
       process.env.SECRET_KEY,
       { expiresIn: '2h' }
     );
-
-    console.log(userLogin)
-
-    // NON più cookie, ma token nel body
+    
     return res.json({
       message: "Login PIN effettuato",
       token,

@@ -10,12 +10,23 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION,
 });
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
 
 const s3 = new AWS.S3();
 
@@ -112,6 +123,35 @@ exports.getProfile = async (req, res) => {
       return res.status(404).json({ error: "Role not found" });
     }
 
+    const extractS3Key = (url) => {
+      if (!url) return null;
+      try {
+        const u = new URL(url);
+        return u.pathname.startsWith("/") ? u.pathname.slice(1) : u.pathname;
+      } catch (e) {
+        return url;
+      }
+    };
+
+    let signedProfileImageUrl = null;
+    if (profile_image) {
+      const profileImageKey = extractS3Key(profile_image);
+
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: profileImageKey,
+      });
+
+      try {
+        signedProfileImageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      } catch (err) {
+        console.warn("Errore generando URL firmato per profile_image:", err);
+      }
+    }
+
+
+    console.log(signedProfileImageUrl)
+
     res.json({
       id,
       firstName: first_name,
@@ -119,7 +159,7 @@ exports.getProfile = async (req, res) => {
       rank: userRole.rank,
       type: userRole.type,
       role: userRole.role_name || "N/A",
-      profileImage: profile_image,
+      profileImage: signedProfileImageUrl,
       email,
       phoneNumber: phone_number,
       registrationDate: registration_date,
@@ -253,6 +293,7 @@ exports.updateProfile = async (req, res) => {
       first_name: firstName,
       last_name: lastName,
       phone_number: phoneNumber,
+      email: email,
     });
 
     // Aggiorna la email (se presente)
