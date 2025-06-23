@@ -4,5 +4,6 @@ const elementController = require("../controllers/elementController");
 
 router.post("/addTimeWork", elementController.addElementTimeWork);
 router.get("/updateElement/:elementId", elementController.updateElement);
+router.get("/getElements/:ship_model_id", elementController.getElements);
 
 module.exports = router; 

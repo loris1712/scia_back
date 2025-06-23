@@ -57,7 +57,7 @@ const ElementModel = sequelize.define("ElementModel", {
     Level6: DataTypes.STRING,
     Level7: DataTypes.STRING,
     Level8: DataTypes.STRING,
-    Level19: DataTypes.STRING,
+    Level9: DataTypes.STRING,
     XG_Center_of_gravity: DataTypes.STRING,
     YG_Center_of_gravity: DataTypes.STRING,
     ZG_Center_of_gravity: DataTypes.STRING,
