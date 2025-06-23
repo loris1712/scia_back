@@ -1,4 +1,25 @@
 const { Location, Warehouses, Spare } = require("../models");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const BUCKET_NAME = 'scia-project-questit';
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+const extractS3Key = (url) => {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return u.pathname.startsWith("/") ? u.pathname.slice(1) : u.pathname;
+  } catch (e) {
+    return url;
+  }
+};
 
 exports.getLocations = async (req, res) => {
   try {
@@ -8,7 +29,6 @@ exports.getLocations = async (req, res) => {
       return res.status(400).json({ error: "Missing ship_id or user_id" });
     }
 
-    // 1️⃣ Trova tutte le locations con i relativi warehouse
     const locations = await Location.findAll({
       where: { ship_id, user_id },
       include: [
@@ -20,13 +40,11 @@ exports.getLocations = async (req, res) => {
       ],
     });
 
-    // 2️⃣ Trova tutti gli spare per la nave
     const spares = await Spare.findAll({
       where: { ship_id },
       attributes: ["location", "quantity"],
     });
 
-    // 3️⃣ Mappa: locationId -> somma quantità
     const spareCountMap = {};
     spares.forEach((spare) => {
       const locationId = spare.location;
@@ -35,16 +53,37 @@ exports.getLocations = async (req, res) => {
       spareCountMap[locationId] = (spareCountMap[locationId] || 0) + qty;
     });
 
-    // 4️⃣ Enrich locations con il conteggio
-    const enrichedLocations = locations.map((loc) => {
-      const spareCount = spareCountMap[loc.id] || 0;
-      return {
-        ...loc.toJSON(),
-        spare_count: spareCount,
-      };
-    });
+    const enrichedLocations = await Promise.all(
+      locations.map(async (loc) => {
+        const locJson = loc.toJSON();
+        const warehouse = locJson.warehouseInfo;
+
+        if (warehouse?.icon_url) {
+          const key = extractS3Key(warehouse.icon_url);
+
+          const command = new GetObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: key,
+          });
+
+          try {
+            const signedIconUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+            locJson.warehouseInfo.icon_url = signedIconUrl;
+          } catch (err) {
+            console.warn("Errore generando signed URL per icon_url:", warehouse.icon_url, err);
+          }
+        }
+
+        const spareCount = spareCountMap[loc.id] || 0;
+        return {
+          ...locJson,
+          spare_count: spareCount,
+        };
+      })
+    );
 
     res.status(200).json({ locations: enrichedLocations });
+
   } catch (error) {
     console.error("Error fetching locations:", error);
     res.status(500).json({ error: "Error fetching locations" });

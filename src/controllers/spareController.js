@@ -9,10 +9,21 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION,
+});
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 const s3 = new AWS.S3();
@@ -35,7 +46,7 @@ exports.getSpare = async (req, res) => {
       include: [
         {
           model: ElemetModel,
-          as: 'elementModel', // Assicurati che l'alias corrisponda a quello definito
+          as: 'elementModel',
         }
       ]
     });
@@ -105,10 +116,47 @@ exports.getSpares = async (req, res) => {
 
       const warehouseIds = [...new Set(locations.map(loc => loc.warehouse))];
 
-      const warehouses = await Warehouses.findAll({
+      const extractS3Key = (url) => {
+        if (!url) return null;
+        try {
+          const u = new URL(url);
+          return u.pathname.startsWith("/") ? u.pathname.slice(1) : u.pathname;
+        } catch (e) {
+          return url;
+        }
+      };
+
+      let warehouses = await Warehouses.findAll({
         where: { id: warehouseIds },
         attributes: ['id', 'name', 'icon_url']
       });
+
+      warehouses = await Promise.all(
+        warehouses.map(async (w) => {
+          let signedIconUrl = null;
+
+          if (w.icon_url) {
+            const key = extractS3Key(w.icon_url);
+
+            const command = new GetObjectCommand({
+              Bucket: BUCKET_NAME,
+              Key: key,
+            });
+
+            try {
+              signedIconUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+            } catch (err) {
+              console.warn("Errore generando signed URL per icon_url:", w.icon_url, err);
+              signedIconUrl = w.icon_url; // fallback
+            }
+          }
+
+          return {
+            ...w.toJSON(),
+            icon_url: signedIconUrl,
+          };
+        })
+      );
 
       return {
         ...spare.toJSON(),
