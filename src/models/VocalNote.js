@@ -14,11 +14,11 @@ const VocalNote = sequelize.define("VocalNote", {
     },
     task_id: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
     audio_url: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
     created_at: {
       type: DataTypes.DATE,
@@ -26,11 +26,15 @@ const VocalNote = sequelize.define("VocalNote", {
     },
     author: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
     type: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
+    },
+    status: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
 }, {
     tableName: "VocalNote",

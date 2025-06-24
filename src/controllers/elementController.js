@@ -29,22 +29,22 @@ exports.updateElement = async (req, res) => {
 };
 
 exports.getElements = async (req, res) => {
-  const { ship_id } = req.params;
+  const { ship_model_id } = req.params;
 
   try {
-    if (!ship_id) {
+    if (!ship_model_id) {
       return res.status(400).json({ error: "Missing ship_id parameter" });
     }
 
     const ship = await Ship.findOne({
-      where: { id: ship_id },
+      where: { id: ship_model_id },
     });
 
     if (!ship) {
       return res.status(404).json({ error: "Ship not found" });
     }
 
-    const flatElements = await ElementModel.findAll({
+    const flatElements = await ElemetModel.findAll({
       where: { ship_model_id: ship.ship_model_id },
       raw: true,
     });

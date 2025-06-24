@@ -149,9 +149,6 @@ exports.getProfile = async (req, res) => {
       }
     }
 
-
-    console.log(signedProfileImageUrl)
-
     res.json({
       id,
       firstName: first_name,

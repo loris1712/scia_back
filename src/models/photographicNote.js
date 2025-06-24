@@ -32,6 +32,10 @@ const PhotographicNote = sequelize.define("PhotographicNote", {
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    status: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
 }, {
     tableName: "PhotographicNote",
     timestamps: false

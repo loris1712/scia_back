@@ -32,6 +32,10 @@ const TextNote = sequelize.define("TextNote", {
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    status: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
 }, {
     tableName: "TextNote",
     timestamps: false

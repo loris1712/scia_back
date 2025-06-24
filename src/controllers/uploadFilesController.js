@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { User, PhotographicNote } = require("../models");
+const { User, PhotographicNote, TextNote, VocalNote } = require("../models");
 const AWS = require('aws-sdk');
 const multer = require('multer');
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
@@ -127,7 +127,6 @@ exports.uploadAudio = async (req, res) => {
     Key: fileName,
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: 'public-read'
   };
 
   try {
@@ -234,7 +233,7 @@ exports.getTextNotes = async (req, res) => {
 };
 
 exports.uploadPhotoGeneral = async (req, res) => {
-  const { failureId, authorId, type } = req.body;
+  const { failureId, authorId, type, status } = req.body;
   const file = req.file;
 
   if (!file) {
@@ -248,7 +247,6 @@ exports.uploadPhotoGeneral = async (req, res) => {
     Key: fileName,
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: 'public-read'
   };
 
   try {
@@ -260,7 +258,8 @@ exports.uploadPhotoGeneral = async (req, res) => {
       image_url: photoUrl,
       created_at: new Date(),
       author: authorId,
-      type: type
+      type: type,
+      status: status,
     });
 
     res.status(201).json({
@@ -274,7 +273,7 @@ exports.uploadPhotoGeneral = async (req, res) => {
 };
 
 exports.uploadAudioGeneral = async (req, res) => {
-  const { failureId, authorId, type } = req.body;
+  const { failureId, authorId, type, status } = req.body;
   const file = req.file;
 
   if (!file) {
@@ -288,7 +287,6 @@ exports.uploadAudioGeneral = async (req, res) => {
     Key: fileName,
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: 'public-read'
   };
 
   try {
@@ -300,7 +298,8 @@ exports.uploadAudioGeneral = async (req, res) => {
       audio_url: audioUrl,
       created_at: new Date(),
       author: authorId,
-      type: type
+      type: type,
+      status: status
     });
 
     res.status(201).json({
@@ -315,7 +314,7 @@ exports.uploadAudioGeneral = async (req, res) => {
 
 exports.uploadTextNoteGeneral = async (req, res) => {
   try {
-    const { failureId, content, authorId, type } = req.body;
+    const { failureId, content, authorId, type, status } = req.body;
 
     if (!failureId || !content) {
       return res.status(400).json({ error: "failureId e content sono obbligatori" });
@@ -325,7 +324,8 @@ exports.uploadTextNoteGeneral = async (req, res) => {
       task_id: failureId,
       text_field: content,
       author: authorId,
-      type: type
+      type: type,
+      status: status
     });
 
     res.status(201).json({
@@ -356,10 +356,51 @@ exports.getAudiosGeneral = async (req, res) => {
       ],
     });
 
+      const extractS3Key = (url) => {
+        if (!url) return null;
+        try {
+          const u = new URL(url);
+          // DECODIFICA completamente il path per ottenere il vero nome del file
+          return decodeURIComponent(u.pathname.startsWith('/') ? u.pathname.slice(1) : u.pathname);
+        } catch (e) {
+          return null;
+        }
+      };
+
+    const signedAudios = await Promise.all(
+      audios.map(async (audio) => {
+        let signedAudioUrl = null;
+
+        if (audio.audio_url) {
+          const key = extractS3Key(audio.audio_url);
+
+          if (key) {
+            const command = new GetObjectCommand({
+              Bucket: BUCKET_NAME,
+              Key: key,
+            });
+
+            try {
+              signedAudioUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+            } catch (err) {
+              console.warn("Errore generando signed URL per audio_url:", err);
+              signedAudioUrl = audio.audio_url; // fallback
+            }
+          }
+        }
+
+        return {
+          ...audio.toJSON(),
+          audio_url: signedAudioUrl,
+        };
+      })
+    );
+
     res.status(200).json({
       message: "Note vocali recuperate con successo",
-      notes: audios,
+      notes: signedAudios,
     });
+
   } catch (error) {
     console.error("Errore nel recupero delle note vocali:", error);
     res.status(500).json({ error: "Errore nel recupero delle note vocali" });
@@ -384,8 +425,6 @@ exports.getTextNotesGeneral = async (req, res) => {
       ],
     });
 
-    console.log(texts)
-
     res.status(200).json({
       message: "Note testuali recuperate con successo",
       notes: texts,
@@ -405,7 +444,7 @@ exports.getPhotosGeneral = async (req, res) => {
     }
 
     const photos = await PhotographicNote.findAll({
-      where: { task_id: failureId, type: type },
+      where: { task_id: failureId, type },
       include: [
         {
           model: User,
@@ -414,9 +453,48 @@ exports.getPhotosGeneral = async (req, res) => {
       ],
     });
 
+    const extractS3Key = (url) => {
+      if (!url) return null;
+      try {
+        const u = new URL(url);
+        return decodeURIComponent(u.pathname.startsWith('/') ? u.pathname.slice(1) : u.pathname);
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const signedPhotos = await Promise.all(
+      photos.map(async (photo) => {
+        let signedPhotoUrl = null;
+
+        if (photo.image_url) {
+          const key = extractS3Key(photo.image_url);
+
+          if (key) {
+            const command = new GetObjectCommand({
+              Bucket: BUCKET_NAME,
+              Key: key,
+            });
+
+            try {
+              signedPhotoUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+            } catch (err) {
+              console.warn("Errore generando signed URL per image_url:", err);
+              signedPhotoUrl = photo.image_url;
+            }
+          }
+        }
+
+        return {
+          ...photo.toJSON(),
+          image_url: signedPhotoUrl,
+        };
+      })
+    );
+
     res.status(200).json({
       message: "Note fotografiche recuperate con successo",
-      notes: photos,
+      notes: signedPhotos,
     });
   } catch (error) {
     console.error("Errore nel recupero delle note fotografiche:", error);
