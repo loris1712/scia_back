@@ -32,6 +32,10 @@ const UserRole = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     }, 
+    Elements: {
+      type: DataTypes.STRING(200),
+      allowNull: true,
+    }, 
   },
   {
     tableName: "UserRole",

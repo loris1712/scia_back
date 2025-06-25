@@ -1,5 +1,6 @@
-const { recurrencyType, maintenanceLevel, Maintenance_List,
-  JobExecution, Job, JobStatus, Element, ElemetModel, StatusCommentsMaintenance, VocalNote, TextNote, PhotographicNote } = require("../models");
+const { recurrencyType, maintenanceLevel, Maintenance_List, Team,
+  JobExecution, Job, JobStatus, Element, ElemetModel, StatusCommentsMaintenance, VocalNote, 
+  TextNote, PhotographicNote, User } = require("../models");
 const { Op } = require("sequelize");
 
 exports.getJobs = async (req, res) => {
@@ -40,7 +41,11 @@ exports.getJobs = async (req, res) => {
                   as: 'maintenance_level',
                 }
               ]
-            }
+            },
+                        {
+                          model: Team,
+                          as: 'team',
+                        },
           ]
         },
         {
@@ -181,7 +186,17 @@ exports.getJob = async (req, res) => {
                   as: 'maintenance_level',
                 }
               ]
-            }
+            },
+            {
+              model: Team,
+              as: 'team',
+              include: [
+                {
+                  model: User,
+                  as: 'teamLeader',
+                }
+              ]
+            },
           ]
         },
         {

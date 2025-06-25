@@ -32,6 +32,8 @@ const maintenanceLevel = require("./maintenanceLevel.js");
 const Maintenance_List = require("./maintenanceList.js");
 const StatusCommentsMaintenance = require("./StatusCommentsMaintenance.js");
 const maintenanceListSpareAdded = require("./maintenanceListSpareAdded.js");
+const Parts = require("./Parts.js");
+const OrganizationCompanyNCAGE = require("./OrganizationCompanyNCAGE.js");
 
 Facilities.hasMany(Facilities, { as: "subFacilities", foreignKey: "parent_id" });
 Facilities.belongsTo(Facilities, { as: "parentFacility", foreignKey: "parent_id" });
@@ -136,11 +138,14 @@ User.hasMany(Ship, { foreignKey: "user_id", as: "ships" });
 
 Spare.belongsTo(ElemetModel, { foreignKey: 'element_model_id', as: 'elementModel' });
 
+Job.belongsTo(Team, { foreignKey: 'team_id', as: 'team' });
+Team.hasMany(Job, { foreignKey: 'team_id', as: 'jobs' });
+
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
   RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,
   ShipFiles, Readings, ReadingsType, Scans, Failures, PhotographicNote, VocalNote, TextNote,
   MaintenanceType, ElemetModel, maintenanceLevel, Maintenance_List,
-  StatusCommentsMaintenance, maintenanceListSpareAdded };
+  StatusCommentsMaintenance, maintenanceListSpareAdded, Parts, OrganizationCompanyNCAGE };
 
 module.exports = db;

@@ -1,6 +1,6 @@
 const { Task, recurrencyType, Element, JobExecution, Job, 
   JobStatus, Maintenance_List, maintenanceLevel, ElemetModel, 
-  VocalNote, TextNote, PhotographicNote } = require("../models");
+  VocalNote, TextNote, PhotographicNote, Team } = require("../models");
 
 exports.getTasks = async (req, res) => {
   try {
@@ -38,7 +38,11 @@ exports.getTasks = async (req, res) => {
                   as: 'maintenance_level',
                 }
               ]
-            }
+            },
+            {
+              model: Team,
+              as: 'team',
+            },
           ]
         },
         {
@@ -81,7 +85,6 @@ exports.getTasks = async (req, res) => {
     );
 
   res.status(200).json({ tasks: checklistJobs });
-
 
   } catch (error) {
     console.error("Error fetching jobs:", error);

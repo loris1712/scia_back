@@ -1,4 +1,147 @@
-const { Element, ElemetModel, Ship } = require("../models");
+const { Organizations } = require("aws-sdk");
+const { Element, ElemetModel, Ship, Spare, JobExecution, 
+  VocalNote, TextNote, PhotographicNote, Parts, OrganizationCompanyNCAGE, User } = require("../models");
+
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+const BUCKET_NAME = 'scia-project-questit';
+
+const extractS3Key = (url) => {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return decodeURIComponent(u.pathname.startsWith('/') ? u.pathname.slice(1) : u.pathname);
+  } catch (e) {
+    return null;
+  }
+};
+
+exports.getElement = async (req, res) => {
+  try {
+    const { element, ship_id } = req.body;
+
+    if (!element || !ship_id) {
+      return res.status(400).json({ error: "Missing element or ship_id in request body" });
+    }
+
+    // Trova il modello dell'elemento
+    const elementModel = await ElemetModel.findOne({
+      where: {
+        ESWBS_code: element,
+        ship_model_id: ship_id,
+      },
+      raw: true,
+    });
+
+    if (!elementModel) {
+      return res.status(404).json({ error: "Element model not found" });
+    }
+
+    // Trova l'elemento vero e proprio
+    const elementData = await Element.findOne({
+      where: {
+        element_model_id: elementModel.id,
+      },
+      raw: true,
+    });
+
+    if (!elementData) {
+      return res.status(404).json({ error: "Element not found" });
+    }
+
+    // Trova i ricambi associati
+    const spares = await Spare.findAll({
+      where: { element_model_id: elementModel.id },
+      raw: true,
+    });
+
+    // Trova tutte le job execution collegate
+    const jobExecutions = await JobExecution.findAll({
+      where: { element_eswbs_instance_id: elementData.id },
+      raw: true,
+    });
+
+    // Per ogni jobExecution, recupera le note collegate
+    const jobExecutionIds = jobExecutions.map((job) => job.id);
+
+    const [vocalNotesRaw, textNotes, photographyNotesRaw] = await Promise.all([
+      VocalNote.findAll({ where: { id: jobExecutionIds }, raw: true }),
+      TextNote.findAll({ where: { id: jobExecutionIds }, raw: true }),
+      PhotographicNote.findAll({ where: { id: jobExecutionIds }, raw: true }),
+    ]);
+
+    const vocalNotes = await Promise.all(
+      vocalNotesRaw.map(async (note) => {
+        const key = extractS3Key(note.audio_url);
+        if (key) {
+          const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key });
+          note.audio_url = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 ora
+        }
+        return note;
+      })
+    );
+
+    const photographyNotes = await Promise.all(
+      photographyNotesRaw.map(async (note) => {
+        const key = extractS3Key(note.image_url);
+        if (key) {
+          const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key });
+          note.image_url = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 ora
+        }
+        return note;
+      })
+    );
+
+    const Author = await User.findOne({
+      where: {
+        id: vocalNotes[0].author,
+      },
+      raw: true,
+    });
+
+    const parts = await Parts.findOne({
+      where: {
+        ID: elementModel.Manufacturer_Parts_ID,
+      },
+      raw: true,
+    });
+
+    const Organization = await OrganizationCompanyNCAGE.findOne({
+      where: {
+        ID: parts.OrganizationCompanyNCAGE_ID,
+      },
+      raw: true,
+    });
+
+    return res.status(200).json({
+      element: elementData,
+      model: elementModel,
+      spares,
+      jobExecutions,
+      parts: parts,
+      organization: Organization,
+      notes: {
+        vocal: vocalNotes,
+        text: textNotes,
+        photos: photographyNotes,
+        author: Author,
+      },
+    });
+
+  } catch (error) {
+    console.error("Error retrieving element with related data:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 exports.addElementTimeWork = async (req, res) => {
   try {
@@ -29,7 +172,7 @@ exports.updateElement = async (req, res) => {
 };
 
 exports.getElements = async (req, res) => {
-  const { ship_model_id } = req.params;
+  const { ship_model_id, user_id } = req.params;
 
   try {
     if (!ship_model_id) {
@@ -37,7 +180,7 @@ exports.getElements = async (req, res) => {
     }
 
     const ship = await Ship.findOne({
-      where: { id: ship_model_id },
+      where: { id: ship_model_id, user_id: user_id },
     });
 
     if (!ship) {
@@ -73,4 +216,3 @@ exports.getElements = async (req, res) => {
     return res.status(500).json({ error: "Server error while retrieving elements" });
   }
 };
-
