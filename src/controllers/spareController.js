@@ -51,6 +51,16 @@ exports.getSpare = async (req, res) => {
       ]
     });
 
+    const extractS3Key = (url) => {
+      if (!url) return null;
+      try {
+        const u = new URL(url);
+        return u.pathname.startsWith("/") ? u.pathname.slice(1) : u.pathname;
+      } catch (e) {
+        return url;
+      }
+    };
+
     const enrichedSpares = await Promise.all(spares.map(async spare => {
       const locationIds = spare.location
         ?.split(',')
@@ -64,10 +74,37 @@ exports.getSpare = async (req, res) => {
 
       const warehouseIds = [...new Set(locations.map(loc => loc.warehouse))];
 
-      const warehouses = await Warehouses.findAll({
+      let warehouses = await Warehouses.findAll({
         where: { id: warehouseIds },
         attributes: ['id', 'name', 'icon_url']
       });
+
+      warehouses = await Promise.all(
+        warehouses.map(async (w) => {
+          let signedIconUrl = null;
+
+          if (w.icon_url) {
+            const key = extractS3Key(w.icon_url);
+
+            const command = new GetObjectCommand({
+              Bucket: BUCKET_NAME,
+              Key: key,
+            });
+
+            try {
+              signedIconUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+            } catch (err) {
+              console.warn("Errore generando signed URL per icon_url:", w.icon_url, err);
+              signedIconUrl = w.icon_url; // fallback in caso di errore
+            }
+          }
+
+          return {
+            ...w.toJSON(),
+            icon_url: signedIconUrl,
+          };
+        })
+      );
 
       return {
         ...spare.toJSON(),

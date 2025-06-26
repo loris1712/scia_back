@@ -99,28 +99,29 @@ exports.getElement = async (req, res) => {
         }
         return note;
       })
-    );
+    ); 
 
-    const Author = await User.findOne({
-      where: {
-        id: vocalNotes[0].author,
-      },
-      raw: true,
-    });
+    const Author = (vocalNotes.length > 0 && vocalNotes[0].author) 
+      ? await User.findOne({
+          where: { id: vocalNotes[0].author },
+          raw: true,
+        }) 
+      : null;
 
-    const parts = await Parts.findOne({
-      where: {
-        ID: elementModel.Manufacturer_Parts_ID,
-      },
-      raw: true,
-    });
+    const parts = elementModel.Manufacturer_Parts_ID
+      ? await Parts.findOne({
+          where: { ID: elementModel.Manufacturer_Parts_ID },
+          raw: true,
+        })
+      : null;
 
-    const Organization = await OrganizationCompanyNCAGE.findOne({
-      where: {
-        ID: parts.OrganizationCompanyNCAGE_ID,
-      },
-      raw: true,
-    });
+    const Organization = parts && parts.OrganizationCompanyNCAGE_ID
+      ? await OrganizationCompanyNCAGE.findOne({
+          where: { ID: parts.OrganizationCompanyNCAGE_ID },
+          raw: true,
+        })
+      : null;
+
 
     return res.status(200).json({
       element: elementData,
