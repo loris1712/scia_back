@@ -51,7 +51,6 @@ const ElementModel = sequelize.define("ElementModel", {
     Replaceability_Code_CS: DataTypes.STRING,
     Alternate_LCN_ALC: DataTypes.STRING,
     Level1: DataTypes.STRING,
-    Level2: DataTypes.STRING,
     Level4: DataTypes.STRING,
     Level5: DataTypes.STRING,
     Level6: DataTypes.STRING,
