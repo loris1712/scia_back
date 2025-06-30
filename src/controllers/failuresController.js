@@ -1,4 +1,4 @@
-const { Failures } = require("../models");
+const { Failures, User } = require("../models");
 
 exports.addFailure = async (req, res) => {
   try {
@@ -13,12 +13,10 @@ exports.addFailure = async (req, res) => {
       customFields,
     } = req.body;
 
-    // 🔍 Controlli base
     if (!description || !date || !gravity || !executionUserType) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Creazione della failure
     const newFailure = await Failures.create({
       title,
       description,
@@ -50,6 +48,12 @@ exports.getFailures = async (req, res) => {
     const failures = await Failures.findAll({
       where: whereClause,
       order: [["date", "DESC"]],
+      include: [
+        {
+          model: User,
+          as: "userExecutionData",
+        },
+      ],
     });
 
     return res.status(200).json({ failures });

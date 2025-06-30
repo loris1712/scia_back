@@ -153,6 +153,10 @@ TeamMember.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" });
 User.hasOne(UserRole, { foreignKey: "user_id", as: "role" });
 UserRole.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
+Failures.belongsTo(User, { foreignKey: "userExecution", as: "userExecutionData" });
+User.hasMany(Failures, { foreignKey: "userExecution", as: "executedFailures" });
+
+
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
   RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,
