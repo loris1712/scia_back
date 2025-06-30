@@ -1,4 +1,4 @@
-const { Readings, ReadingsType, Element } = require("../models");
+const { Readings, ReadingsType, Element, ElemetModel } = require("../models");
 
 exports.getReadings = async (req, res) => {
   try {
@@ -21,7 +21,13 @@ exports.getReadings = async (req, res) => {
         {
           model: Element,
           as: 'element',
-          attributes: ["id", "name", "element_model_id", "ship_id", "serial_number", "installation_date", "progressive_code"], 
+          attributes: ["id", "name", "element_model_id", "ship_id", "serial_number", "installation_date", "progressive_code"],
+          include: [
+            {
+              model: ElemetModel, 
+              as: 'element_model',    
+            }
+          ], 
         },
       ],
     });
@@ -55,6 +61,12 @@ exports.getReading = async (req, res) => {
           model: Element,
           as: 'element',
           attributes: ["id", "name", "element_model_id", "ship_id", "serial_number", "installation_date", "progressive_code"], 
+          include: [
+            {
+              model: ElemetModel, 
+              as: 'element_model',    
+            }
+          ],
         },
       ],
     });
