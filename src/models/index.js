@@ -34,6 +34,7 @@ const StatusCommentsMaintenance = require("./StatusCommentsMaintenance.js");
 const maintenanceListSpareAdded = require("./maintenanceListSpareAdded.js");
 const Parts = require("./Parts.js");
 const OrganizationCompanyNCAGE = require("./OrganizationCompanyNCAGE.js");
+const TeamMember = require("./teamMember.js");
 
 Facilities.hasMany(Facilities, { as: "subFacilities", foreignKey: "parent_id" });
 Facilities.belongsTo(Facilities, { as: "parentFacility", foreignKey: "parent_id" });
@@ -141,11 +142,23 @@ Spare.belongsTo(ElemetModel, { foreignKey: 'element_model_id', as: 'elementModel
 Job.belongsTo(Team, { foreignKey: 'team_id', as: 'team' });
 Team.hasMany(Job, { foreignKey: 'team_id', as: 'jobs' });
 
+User.hasMany(TeamMember, { foreignKey: "user_id", as: "userTeamMembers" });
+Team.hasMany(TeamMember, { foreignKey: "team_id", as: "teamTeamMembers" });
+Ship.hasMany(TeamMember, { foreignKey: "ship_id", as: "shipTeamMembers" });
+
+TeamMember.belongsTo(User, { foreignKey: "user_id", as: "user" });
+TeamMember.belongsTo(Team, { foreignKey: "team_id", as: "team" });
+TeamMember.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" });
+
+User.hasOne(UserRole, { foreignKey: "user_id", as: "role" });
+UserRole.belongsTo(User, { foreignKey: "user_id", as: "user" });
+
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
   RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,
   ShipFiles, Readings, ReadingsType, Scans, Failures, PhotographicNote, VocalNote, TextNote,
   MaintenanceType, ElemetModel, maintenanceLevel, Maintenance_List,
-  StatusCommentsMaintenance, maintenanceListSpareAdded, Parts, OrganizationCompanyNCAGE };
+  StatusCommentsMaintenance, maintenanceListSpareAdded, Parts, OrganizationCompanyNCAGE,
+  TeamMember };
 
 module.exports = db;

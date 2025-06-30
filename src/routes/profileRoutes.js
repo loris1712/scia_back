@@ -13,5 +13,7 @@ router.post("/uploadProfileImage", upload.single("profileImage"), profileControl
 router.get("/getRanks", profileController.getRanks);
 router.get("/getAPIbackend", profileController.getAPIbackend);
 router.get("/getLogs", profileController.getLogs);
+router.get("/getUsers/:teamId", profileController.getUsers);
+router.put("/:userId/elements", profileController.updateUserElements);
 
 module.exports = router;   

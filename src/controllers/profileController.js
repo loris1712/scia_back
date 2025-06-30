@@ -2,7 +2,7 @@ require('dotenv').config();
 var pjson = require('../../package.json');
 const logger = require('../../logger')
 
-const { UserLogin, User, UserRole, Team, RanksMarine, Ship } = require("../models");
+const { UserLogin, User, UserRole, Team, RanksMarine, Ship, TeamMember } = require("../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const AWS = require('aws-sdk');
@@ -182,6 +182,58 @@ exports.getProfile = async (req, res) => {
   } catch (error) {
     console.error("Error verifying token:", error);
     res.status(401).json({ error: "Invalid token" });
+  }
+};
+
+exports.getUsers = async (req, res) => {
+  const teamId = req.params.teamId;
+
+  try {
+    const teamMembers = await TeamMember.findAll({
+      where: { team_id: teamId },
+      include: [
+        {
+          model: User,
+          as: "user",
+          include: [
+            {
+              model: UserRole,
+              as: "role",
+            },
+          ],
+        },
+        {
+          model: Team,
+          as: "team",
+        },
+        {
+          model: Ship,
+          as: "ship",
+        },
+      ],
+    });
+
+    if (!teamMembers || teamMembers.length === 0) {
+      return res.status(404).json({ error: "No users found for this team" });
+    }
+
+    const usersData = teamMembers.map((member) => {
+      const user = member.user;
+      const userRole = user.role;
+
+      return {
+        ...user?.toJSON?.(),
+        isLeader: member.is_leader,
+        team: member.team ? member.team.toJSON() : null,
+        ship: member.ship ? member.ship.toJSON() : null,
+        role: userRole ? userRole.toJSON() : null,
+      };
+    });
+
+    res.json(usersData);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -395,3 +447,32 @@ exports.getLogs = (req, res) => {
     }
   });
 };
+
+exports.updateUserElements = async (req, res) => {
+  const { userId } = req.params;
+  const { elements } = req.body;
+
+  if (!Array.isArray(elements)) {
+    return res.status(400).json({ error: "Il campo elements deve essere un array." });
+  }
+
+  try {
+    const userRole = await UserRole.findOne({ where: { user_id: userId } });
+
+    if (!userRole) {
+      return res.status(404).json({ error: "Ruolo utente non trovato." });
+    }
+
+    userRole.Elements = elements.join(",");
+    await userRole.save();
+
+    return res.json({
+      message: "Elements aggiornato con successo.",
+      role: userRole,
+    });
+  } catch (error) {
+    console.error("Errore aggiornando Elements:", error);
+    return res.status(500).json({ error: "Errore interno del server." });
+  }
+};
+

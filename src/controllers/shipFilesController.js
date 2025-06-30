@@ -33,7 +33,7 @@ exports.getFiles = async (req, res) => {
     const files = await ShipFiles.findAll({
       where: { ship_id, user_id },
       order: [['uploaded_at', 'DESC']],
-    });
+    }); 
 
     const signedFiles = await Promise.all(
       files.map(async (file) => {
