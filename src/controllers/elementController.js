@@ -145,14 +145,25 @@ exports.getElement = async (req, res) => {
 };
 
 exports.addElementTimeWork = async (req, res) => {
+  const { id, time } = req.body;
+
   try {
-    const element = await Element.create(req.body);
-    res.status(201).json({ message: "Element successfully added", element });
+    const element = await Element.findByPk(id);
+    if (!element) {
+      return res.status(404).json({ error: "Element not found" });
+    }
+
+    element.time_to_work = time; 
+    element.updated_at = new Date(); 
+    await element.save();
+
+    res.status(200).json({ message: "Element timeWork updated", element });
   } catch (error) {
-    console.error("Error creating element:", error);
-    res.status(500).json({ error: "Error creating element" });
+    console.error("Error updating element timeWork:", error);
+    res.status(500).json({ error: "Error updating element timeWork" });
   }
-}; 
+};
+
 
 exports.updateElement = async (req, res) => {
   const { id } = req.params;

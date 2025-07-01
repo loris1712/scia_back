@@ -9,10 +9,16 @@ const Element = sequelize.define("Element", {
     name: { type: DataTypes.STRING, allowNull: false },
     serial_number: { type: DataTypes.STRING, allowNull: false },
     installation_date: { type: DataTypes.DATE },
-    progressive_code: { type: DataTypes.INTEGER }
+    progressive_code: { type: DataTypes.INTEGER },
+    time_to_work: { type: DataTypes.STRING, },
+    updated_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
 }, {
     tableName: "Element",
-    timestamps: false
+    timestamps: false,
+    updatedAt: "updated_at",
 });
 
 Element.belongsTo(Ship, { foreignKey: "ship_id" });
