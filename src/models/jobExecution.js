@@ -15,6 +15,10 @@ const JobExecution = sequelize.define("JobExecution", {
     type: DataTypes.INTEGER,
     allowNull: true
   },
+  pauseDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   user_id: {
     type: DataTypes.INTEGER,
     allowNull: true

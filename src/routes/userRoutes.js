@@ -10,8 +10,8 @@ router.get("/", async (req, res) => {
   } catch (err) {
     console.error("Errore query:", err);
     res.status(500).json({ error: "Errore durante il recupero utenti" });
-  }
-});
+  } 
+}); 
 
 module.exports = router;
 
