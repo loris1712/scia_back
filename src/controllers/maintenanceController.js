@@ -241,7 +241,7 @@ exports.updateStatus = async (req, res) => {
  
     jobExecution.status_id = status_id;
 
-    if(status_id == 2){
+    if(status_id){
       jobExecution.pauseDate = Date.now();
     }
  
