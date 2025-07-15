@@ -153,6 +153,19 @@ exports.getTypes = async (req, res) => {
   }
 };
 
+exports.getGeneralTypes = async (req, res) => {
+  try {
+
+    const generalTypes = await recurrencyType.findAll();
+
+    return res.status(200).json(generalTypes);
+
+  } catch (error) {
+    console.error("Error fetching maintenance types:", error);
+    return res.status(500).json({ error: "Error fetching maintenance types" });
+  }
+};
+
 exports.getJob = async (req, res) => {
   try {
     const { taskId } = req.query;

@@ -25,7 +25,22 @@ const RecurrencyType = sequelize.define(
     RecurrencyType_Frequency: {
       type: DataTypes.INTEGER,
       allowNull: true,
-    },  
+    }, 
+     delay_threshold: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true,
+    },
+     due_threshold: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true,
+    },
+     early_threshold: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true,
+    }, 
   },
   {
     tableName: "RecurrencyType",
