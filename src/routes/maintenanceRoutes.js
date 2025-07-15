@@ -4,6 +4,7 @@ const maintenanceController = require("../controllers/maintenanceController");
 
 router.get("/type", maintenanceController.getTypes);
 router.get("/getGeneralTypes", maintenanceController.getGeneralTypes);
+router.get("/getMaintenanceLevels", maintenanceController.getMaintenanceLevels);
 router.get("/jobs", maintenanceController.getJobs);
 router.get("/job", maintenanceController.getJob);
 router.post('/updateStatus/:id', maintenanceController.updateStatus);

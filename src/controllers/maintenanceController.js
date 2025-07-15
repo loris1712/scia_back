@@ -166,6 +166,19 @@ exports.getGeneralTypes = async (req, res) => {
   }
 };
 
+exports.getMaintenanceLevels = async (req, res) => {
+  try {
+
+    const generalLevels = await maintenanceLevel.findAll();
+
+    return res.status(200).json(generalLevels);
+
+  } catch (error) {
+    console.error("Error fetching maintenance types:", error);
+    return res.status(500).json({ error: "Error fetching maintenance types" });
+  }
+};
+
 exports.getJob = async (req, res) => {
   try {
     const { taskId } = req.query;
