@@ -11,11 +11,8 @@ exports.addFailure = async (req, res) => {
       userExecution,
       partNumber,
       customFields,
+      ship_id
     } = req.body;
-
-    if (!description || !date || !gravity || !executionUserType) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
 
     const newFailure = await Failures.create({
       title,

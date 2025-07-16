@@ -12,5 +12,5 @@ router.post('/saveStatusComment/:id', maintenanceController.saveStatusComment);
 router.patch('/reportAnomaly/:id', maintenanceController.reportAnomaly);
 router.patch('/markAsOk/:id', maintenanceController.markAsOk);
 
-module.exports = router;
+module.exports = router; 
 
