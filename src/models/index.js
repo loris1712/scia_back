@@ -35,6 +35,8 @@ const maintenanceListSpareAdded = require("./maintenanceListSpareAdded.js");
 const Parts = require("./Parts.js");
 const OrganizationCompanyNCAGE = require("./OrganizationCompanyNCAGE.js");
 const TeamMember = require("./teamMember.js");
+const ProjectCommission = require("./projectCommission.js");
+const Shipyards = require("./shipyard.js");
 
 Facilities.hasMany(Facilities, { as: "subFacilities", foreignKey: "parent_id" });
 Facilities.belongsTo(Facilities, { as: "parentFacility", foreignKey: "parent_id" });
@@ -134,13 +136,13 @@ JobExecution.hasMany(VocalNote, { foreignKey: "task_id", as: "vocalNotes" });
 JobExecution.hasMany(TextNote, { foreignKey: "task_id", as: "textNotes" });
 JobExecution.hasMany(PhotographicNote, { foreignKey: "task_id", as: "photographicNotes" });
 
-Ship.belongsTo(User, { foreignKey: "user_id", as: "owner" });
-User.hasMany(Ship, { foreignKey: "user_id", as: "ships" });
+Ship.belongsTo(Team, { foreignKey: "team", as: "teamData" });
+Team.hasMany(Ship, { foreignKey: "team", as: "ships" });
 
 Spare.belongsTo(ElemetModel, { foreignKey: 'element_model_id', as: 'elementModel' });
 
-Job.belongsTo(Team, { foreignKey: 'team_id', as: 'team' });
 Team.hasMany(Job, { foreignKey: 'team_id', as: 'jobs' });
+Job.belongsTo(Team, { foreignKey: 'team_id', as: 'team' });
 
 User.hasMany(TeamMember, { foreignKey: "user_id", as: "userTeamMembers" });
 Team.hasMany(TeamMember, { foreignKey: "team_id", as: "teamTeamMembers" });
@@ -151,11 +153,26 @@ TeamMember.belongsTo(Team, { foreignKey: "team_id", as: "team" });
 TeamMember.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" });
 
 User.hasOne(UserRole, { foreignKey: "user_id", as: "role" });
-UserRole.belongsTo(User, { foreignKey: "user_id", as: "user" });
+UserRole.belongsTo(User, { foreignKey: "user_id", as: "roleUser" });
+
+User.hasOne(UserLogin, { foreignKey: "user_id", as: "login" });
+UserLogin.belongsTo(User, { foreignKey: "user_id", as: "loginUser" });
 
 Failures.belongsTo(User, { foreignKey: "userExecution", as: "userExecutionData" });
 User.hasMany(Failures, { foreignKey: "userExecution", as: "executedFailures" });
 
+Spare.belongsTo(Parts, { foreignKey: "Parts_ID", as: "part" });
+Parts.hasMany(Spare, { foreignKey: "Parts_ID", as: "spares" });
+
+Parts.belongsTo(OrganizationCompanyNCAGE, { 
+  foreignKey: "OrganizationCompanyNCAGE_ID", 
+  as: "organizationCompanyNCAGE" 
+});
+
+OrganizationCompanyNCAGE.hasMany(Parts, { 
+  foreignKey: "OrganizationCompanyNCAGE_ID", 
+  as: "parts" 
+});
 
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
@@ -163,6 +180,6 @@ const db = { sequelize, Job, Element, Ship, JobStatus,
   ShipFiles, Readings, ReadingsType, Scans, Failures, PhotographicNote, VocalNote, TextNote,
   MaintenanceType, ElemetModel, maintenanceLevel, Maintenance_List,
   StatusCommentsMaintenance, maintenanceListSpareAdded, Parts, OrganizationCompanyNCAGE,
-  TeamMember };
+  TeamMember, ProjectCommission, Shipyards };
 
 module.exports = db;

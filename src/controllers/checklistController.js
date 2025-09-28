@@ -39,12 +39,8 @@ exports.getTasks = async (req, res) => {
                 }
               ]
             },
-            {
-              model: Team,
-              as: 'team',
-            },
           ]
-        },
+        }, 
         {
           model: JobStatus,
           as: 'status',

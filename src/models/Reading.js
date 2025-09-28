@@ -28,6 +28,9 @@ const Reading = sequelize.define("Readings", {
   value: {
     type: DataTypes.STRING,
   },
+  unit: {
+    type: DataTypes.STRING,
+  },
   due_date: {
     type: DataTypes.DATE,
   },

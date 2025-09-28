@@ -36,14 +36,13 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 exports.getProfile = async (req, res) => {
-  // Prendi token da header Authorization (formato: "Bearer <token>")
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized: Token missing" });
   }
 
-  const token = authHeader.split(" ")[1]; // prendi solo il token
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
@@ -80,18 +79,25 @@ exports.getProfile = async (req, res) => {
             ],
           },
           {
-            model: Ship,
-            as: "ships",
-            attributes: [
-              "id",
-              "ship_model_id",
-              "fleet_id",
-              "model_code",
-              "unit_name",
-              "unit_code",
-              "launch_date",
-              "delivery_date",
-              "Side_ship_number",
+            model: TeamMember,
+            as: "userTeamMembers",
+            attributes: ["id", "is_leader"],
+            include: [
+              {
+                model: Ship,
+                as: "ship",
+                attributes: [
+                  "id",
+                  "ship_model_id",
+                  "fleet_id",
+                  "model_code",
+                  "unit_name",
+                  "unit_code",
+                  "launch_date",
+                  "delivery_date",
+                  "Side_ship_number",
+                ],
+              },
             ],
           },
         ],
@@ -113,12 +119,11 @@ exports.getProfile = async (req, res) => {
       bot_id_ita,
       bot_id_ing,
       bot_id_esp,
-      ships,
+      userTeamMembers,
     } = userLogin.user;
     const { email } = userLogin;
 
     const userRole = await UserRole.findOne({ where: { user_id: id } });
-
     if (!userRole) {
       return res.status(404).json({ error: "Role not found" });
     }
@@ -128,7 +133,7 @@ exports.getProfile = async (req, res) => {
       try {
         const u = new URL(url);
         return u.pathname.startsWith("/") ? u.pathname.slice(1) : u.pathname;
-      } catch (e) {
+      } catch {
         return url;
       }
     };
@@ -136,18 +141,33 @@ exports.getProfile = async (req, res) => {
     let signedProfileImageUrl = null;
     if (profile_image) {
       const profileImageKey = extractS3Key(profile_image);
-
       const command = new GetObjectCommand({
         Bucket: BUCKET_NAME,
         Key: profileImageKey,
       });
 
       try {
-        signedProfileImageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        signedProfileImageUrl = await getSignedUrl(s3Client, command, {
+          expiresIn: 3600,
+        });
       } catch (err) {
         console.warn("Errore generando URL firmato per profile_image:", err);
       }
     }
+
+    // Costruisci ships dall’associazione via TeamMember
+    const ships = userTeamMembers?.map((tm) => ({
+      id: tm.ship.id,
+      shipModelId: tm.ship.ship_model_id,
+      fleetId: tm.ship.fleet_id,
+      modelCode: tm.ship.model_code,
+      unitName: tm.ship.unit_name,
+      unitCode: tm.ship.unit_code,
+      launchDate: tm.ship.launch_date,
+      deliveryDate: tm.ship.delivery_date,
+      sideShipNumber: tm.ship.Side_ship_number,
+      isLeader: tm.is_leader,
+    })) || [];
 
     res.json({
       id,
@@ -165,25 +185,19 @@ exports.getProfile = async (req, res) => {
       bot_id_esp,
       team: team ? { id: team.id, name: team.name } : null,
       teamLeader: team?.teamLeader
-        ? { firstName: team.teamLeader.first_name, lastName: team.teamLeader.last_name }
+        ? {
+            firstName: team.teamLeader.first_name,
+            lastName: team.teamLeader.last_name,
+          }
         : null,
-      ships: ships.map((ship) => ({
-        id: ship.id,
-        shipModelId: ship.ship_model_id,
-        fleetId: ship.fleet_id,
-        modelCode: ship.model_code,
-        unitName: ship.unit_name,
-        unitCode: ship.unit_code,
-        launchDate: ship.launch_date,
-        deliveryDate: ship.delivery_date,
-        sideShipNumber: ship.Side_ship_number,
-      })),
+      ships,
     });
   } catch (error) {
     console.error("Error verifying token:", error);
     res.status(401).json({ error: "Invalid token" });
   }
 };
+
 
 exports.getUsers = async (req, res) => {
   const teamId = req.params.teamId;
@@ -248,7 +262,7 @@ exports.getProfileById = async (req, res) => {
   const requestedUserId = req.params.id;
 
   try {
-    const decoded = jwt.verify(token, process.env.SECRET_KEY); // puoi usare decoded.userId se vuoi limitare accesso
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
     const userLogin = await UserLogin.findOne({
       where: { user_id: requestedUserId },
@@ -303,14 +317,36 @@ exports.getProfileById = async (req, res) => {
       return res.status(404).json({ error: "Role not found" });
     }
 
+    // Funzione helper per estrarre chiave S3
+    const extractS3Key = (url) => {
+      if (!url) return null;
+      try {
+        const u = new URL(url);
+        return u.pathname.startsWith("/") ? u.pathname.slice(1) : u.pathname;
+      } catch (e) {
+        return url;
+      }
+    };
+
+    let signedProfileImageUrl = null;
+    if (profile_image) {
+      const profileImageKey = extractS3Key(profile_image);
+      const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: profileImageKey });
+      try {
+        signedProfileImageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      } catch (err) {
+        console.warn("Errore generando URL firmato per profile_image:", err);
+      }
+    }
+
     res.json({
       id,
       firstName: first_name,
       lastName: last_name,
       rank: userRole.rank,
       type: userRole.type,
-      role: userRole.role_name,
-      profileImage: profile_image,
+      role: userRole.role_name || "N/A",
+      profileImage: signedProfileImageUrl,
       email,
       phoneNumber: phone_number,
       registrationDate: registration_date,

@@ -1,4 +1,4 @@
-const { Spare, Location, Warehouses, maintenanceListSpareAdded, ElemetModel } = require("../models");
+const { Spare, Location, Warehouses, maintenanceListSpareAdded, ElemetModel, Parts, OrganizationCompanyNCAGE } = require("../models");
 const { Op } = require("sequelize");
 
 require('dotenv').config();
@@ -32,90 +32,140 @@ const BUCKET_NAME = 'scia-project-questit';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
-
+  
 exports.getSpare = async (req, res) => {
   try {
-    const { name, serial_number } = req.query;
+    const { name, id, page } = req.query; // 👈 aggiunto anche page opzionale
 
     const where = {};
     if (name) where.Part_name = name;
-    if (serial_number) where.Serial_number = serial_number;
+    if (id) where.ID = id;
 
     const spares = await Spare.findAll({
       where,
       include: [
         {
           model: ElemetModel,
-          as: 'elementModel',
-        }
-      ]
+          as: "elementModel",
+        },
+        {
+          model: Parts,
+          as: "part",
+          include: [
+            {
+              model: OrganizationCompanyNCAGE,
+              as: "organizationCompanyNCAGE",
+            },
+          ],
+        },
+      ],
     });
 
-    const extractS3Key = (url) => {
-      if (!url) return null;
+    // funzione per generare signed url
+    const getSignedFileUrl = async (fileName) => {
       try {
-        const u = new URL(url);
-        return u.pathname.startsWith("/") ? u.pathname.slice(1) : u.pathname;
-      } catch (e) {
-        return url;
+        const list = await s3
+          .listObjectsV2({
+            Bucket: BUCKET_NAME,
+            Prefix: "", // se i tuoi file sono dentro una cartella, cambia qui
+          })
+          .promise();
+
+        const found = list.Contents.find((obj) =>
+          obj.Key.toLowerCase().includes(fileName.toLowerCase())
+        );
+
+        if (!found) return null;
+
+        const command = new GetObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: found.Key,
+        });
+
+        return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      } catch (err) {
+        console.error("Errore cercando file su S3:", err);
+        return null;
       }
     };
 
-    const enrichedSpares = await Promise.all(spares.map(async spare => {
-      const locationIds = spare.location
-        ?.split(',')
-        .map(id => parseInt(id.trim()))
-        .filter(id => !isNaN(id)) || [];
+    const enrichedSpares = await Promise.all(
+      spares.map(async (spare) => {
+        const locationIds =
+          spare.location
+            ?.split(",")
+            .map((id) => parseInt(id.trim()))
+            .filter((id) => !isNaN(id)) || [];
 
-      const locations = await Location.findAll({
-        where: { id: locationIds },
-        attributes: ['id', 'location', 'ship_id', 'warehouse']
-      });
+        const locations = await Location.findAll({
+          where: { id: locationIds },
+          attributes: ["id", "location", "ship_id", "warehouse"],
+        });
 
-      const warehouseIds = [...new Set(locations.map(loc => loc.warehouse))];
+        const warehouseIds = [...new Set(locations.map((loc) => loc.warehouse))];
 
-      let warehouses = await Warehouses.findAll({
-        where: { id: warehouseIds },
-        attributes: ['id', 'name', 'icon_url']
-      });
+        let warehouses = await Warehouses.findAll({
+          where: { id: warehouseIds },
+          attributes: ["id", "name", "icon_url"],
+        });
 
-      warehouses = await Promise.all(
-        warehouses.map(async (w) => {
-          let signedIconUrl = null;
+        warehouses = await Promise.all(
+          warehouses.map(async (w) => {
+            let signedIconUrl = null;
 
-          if (w.icon_url) {
-            const key = extractS3Key(w.icon_url);
+            if (w.icon_url) {
+              const key = w.icon_url.replace(/^https?:\/\/[^/]+\//, "");
+              const command = new GetObjectCommand({
+                Bucket: BUCKET_NAME,
+                Key: key,
+              });
 
-            const command = new GetObjectCommand({
-              Bucket: BUCKET_NAME,
-              Key: key,
-            });
-
-            try {
-              signedIconUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-            } catch (err) {
-              console.warn("Errore generando signed URL per icon_url:", w.icon_url, err);
-              signedIconUrl = w.icon_url; // fallback in caso di errore
+              try {
+                signedIconUrl = await getSignedUrl(s3Client, command, {
+                  expiresIn: 3600,
+                });
+              } catch (err) {
+                console.warn(
+                  "Errore generando signed URL per icon_url:",
+                  w.icon_url,
+                  err
+                );
+                signedIconUrl = w.icon_url;
+              }
             }
+
+            return {
+              ...w.toJSON(),
+              icon_url: signedIconUrl,
+            };
+          })
+        );
+
+        // 🔥 qui prendiamo il documento da part.Document_file_link
+        let documentFileUrl = null;
+        if (spare.part && spare.part.Document_file_link) {
+          documentFileUrl = await getSignedFileUrl(
+            spare.part.Document_file_link
+          );
+
+          // se c'è parametro page, aggiungi #page=xx
+          if (documentFileUrl && page) {
+            documentFileUrl = `${documentFileUrl}#page=${page}`;
           }
+        }
 
-          return {
-            ...w.toJSON(),
-            icon_url: signedIconUrl,
-          };
-        })
-      );
-
-      return {
-        ...spare.toJSON(),
-        elementModel: spare.elementModel,
-        locations,
-        warehouses
-      };
-    }));
+        return {
+          ...spare.toJSON(),
+          elementModel: spare.elementModel,
+          part: spare.part,
+          locations,
+          warehouses,
+          documentFileUrl,
+        };
+      })
+    );
 
     res.status(200).json({ spares: enrichedSpares });
-
   } catch (error) {
     console.error("Error fetching spares:", error);
     res.status(500).json({ error: "Error fetching spares" });
@@ -135,9 +185,19 @@ exports.getSpares = async (req, res) => {
       include: [
         {
           model: ElemetModel,
-          as: 'elementModel',
-        }
-      ]
+          as: "elementModel",
+        },
+        {
+          model: Parts,
+          as: "part",
+          include: [
+            {
+              model: OrganizationCompanyNCAGE,
+              as: "organizationCompanyNCAGE",
+            },
+          ],
+        },
+      ],
     });
 
     const enrichedSpares = await Promise.all(spares.map(async spare => {

@@ -23,11 +23,11 @@ const User = sequelize.define(
     },
     profile_image: {
       type: DataTypes.TEXT("long"),
-      allowNull: false,
+      allowNull: true,
     },
     phone_number: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true,
     },
     registration_date: {
       type: DataTypes.DATE,

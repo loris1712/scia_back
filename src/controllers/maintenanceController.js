@@ -42,10 +42,6 @@ exports.getJobs = async (req, res) => {
                 }
               ]
             },
-                        {
-                          model: Team,
-                          as: 'team',
-                        },
           ]
         },
         {

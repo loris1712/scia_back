@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
-const Element = require("./element");
 
 // Ship Model
 const Ship = sequelize.define("Ship", {
@@ -13,10 +12,11 @@ const Ship = sequelize.define("Ship", {
     launch_date: { type: DataTypes.DATE },
     delivery_date: { type: DataTypes.DATE },
     Side_ship_number: { type: DataTypes.STRING(255) },
-    user_id: { type: DataTypes.INTEGER }
+    team: { type: DataTypes.INTEGER }   // ✅ sostituito user_id con team
 }, {
     tableName: "Ship",
     timestamps: false
 });
 
 module.exports = Ship;
+

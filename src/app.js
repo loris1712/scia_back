@@ -27,6 +27,13 @@ const scansRoutes = require("./routes/scansRoutes");
 const failuresRoutes = require("./routes/failuresRoutes");
 const uploadFilesRoutes = require("./routes/uploadFilesRoutes");
 
+//ADMIN
+const adminAuthRoutes = require("./routes/admin/authRoutes");
+const usersAdminRoutes = require("./routes/admin/usersRoutes");
+const teamsAdminRoutes = require("./routes/admin/teamsRoutes");
+const projectsAdminRoutes = require("./routes/admin/projectsRoutes");
+const shipyardsAdminRoutes = require("./routes/admin/shipyardsRoutes");
+
 const app = express();
 
 const cookieParser = require("cookie-parser");
@@ -36,6 +43,7 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
+  "http://localhost:3002",
   "http://52.59.162.108:3000",
   "https://scia-frontend.vercel.app"
 ];
@@ -48,7 +56,7 @@ app.use(cors({
     } else {
       return callback(new Error("Not allowed by CORS: " + origin));
     }
-  },
+  }, 
   credentials: true,
 }));
 
@@ -74,7 +82,14 @@ app.use("/api/readings", readingsRoutes);
 app.use("/api/scans", scansRoutes);
 app.use("/api/failures", failuresRoutes);
 app.use("/api/uploadFiles", uploadFilesRoutes);
- 
+
+//ADMIN
+app.use("/api/admin/auth", adminAuthRoutes); 
+app.use("/api/admin/users", usersAdminRoutes); 
+app.use("/api/admin/teams", teamsAdminRoutes); 
+app.use("/api/admin/projects", projectsAdminRoutes); 
+app.use("/api/admin/shipyards", shipyardsAdminRoutes); 
+
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))
     .catch(err => console.error("Errore di sincronizzazione:", err));

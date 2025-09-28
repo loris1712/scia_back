@@ -1,4 +1,4 @@
-const { Spare, Cart } = require("../models");
+const { Spare, Cart, ElemetModel, Parts, OrganizationCompanyNCAGE } = require("../models");
 
 exports.getProduct = async (req, res) => {
   try {
@@ -16,7 +16,6 @@ exports.getProduct = async (req, res) => {
   }
 };
 
-
 exports.getCart = async (req, res) => {
   try {
     const { user_id } = req.query;
@@ -26,7 +25,21 @@ exports.getCart = async (req, res) => {
 
     const cartItems = await Cart.findAll({
       where,
-      include: [{ model: Spare }],
+      include: [
+        {
+          model: Spare,
+          include: [
+            { model: ElemetModel, as: "elementModel" },
+            { 
+              model: Parts, 
+              as: "part",
+              include: [
+                { model: OrganizationCompanyNCAGE, as: "organizationCompanyNCAGE" }
+              ]
+            }
+          ]
+        }
+      ]
     });
 
     res.status(200).json({ cart: cartItems });
