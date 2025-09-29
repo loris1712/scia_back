@@ -13,7 +13,6 @@ exports.getJobs = async (req, res) => {
 
     const whereClause = {
       ship_id,
-      user_id,
     };
 
     if (type_id !== "undefined") {
