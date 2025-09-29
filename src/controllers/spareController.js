@@ -319,7 +319,7 @@ exports.moveSpare = async (req, res) => {
     }
 
     const newLocation = updateData.locationData[0].newLocation;
-    console.log(newLocation)
+    //console.log(newLocation)
 
     let locationRecord = await Location.findOne({
       where: {
@@ -425,7 +425,7 @@ exports.submitProduct = async (req, res) => {
       image,
     } = req.body;
 
-    console.log(req.body)
+    //console.log(req.body)
 
     let locationRecord = await Location.findOne({
       where: {
@@ -481,7 +481,7 @@ exports.uploadProductImage = async (req, res) => {
   const partNumber = req.body.partNumber;
   const originalName = req.body.originalName;
 
-  console.log(req.file)
+  //console.log(req.file)
 
   if (!file) {
     return res.status(400).json({ error: "No file uploaded" });

@@ -1,7 +1,39 @@
 const { recurrencyType, maintenanceLevel, Maintenance_List, Team,
   JobExecution, Job, JobStatus, Element, ElemetModel, StatusCommentsMaintenance, VocalNote, 
   TextNote, PhotographicNote, User } = require("../models");
+
+require('dotenv').config();
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const AWS = require('aws-sdk');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
 const { Op } = require("sequelize");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+const s3 = new AWS.S3();
+
+const BUCKET_NAME = 'scia-project-questit';
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 exports.getJobs = async (req, res) => {
   try {
@@ -20,63 +52,68 @@ exports.getJobs = async (req, res) => {
     }
 
     const jobs = await JobExecution.findAll({
-      where: whereClause,
-      order: [["ending_date", "ASC"]],
+  where: whereClause,
+  order: [["ending_date", "ASC"]],
+  include: [
+    {
+      model: recurrencyType,
+      as: 'recurrencyType',
+    },
+    {
+      model: Job,
+      as: 'job',
       include: [
         {
-          model: recurrencyType,
-          as: 'recurrencyType',
-        },
-        {
-          model: Job,
-          as: 'job',
+          model: Maintenance_List,
+          as: 'maintenance_list',
           include: [
             {
-              model: Maintenance_List,
-              as: 'maintenance_list',
-              include: [
-                {
-                  model: maintenanceLevel,
-                  as: 'maintenance_level',
-                }
-              ]
+              model: maintenanceLevel,
+              as: 'maintenance_level',
             },
+            {
+              model: recurrencyType,     
+              as: 'recurrencyType',
+            }
           ]
         },
+      ]
+    },
+    {
+      model: JobStatus,
+      as: 'status',
+    },
+    {
+      model: Element,
+      as: 'Element',
+      include: [
         {
-          model: JobStatus,
-          as: 'status',
-        },
-        {
-          model: Element,
-          as: 'Element',
-          include: [
-            {
-              model: ElemetModel,
-              as: 'element_model',
-            }
-          ],
-        },
-        {
-          model: VocalNote,
-          as: "vocalNotes",
-          where: { type: "maintenance" },
-          required: false, 
-        },
-        {
-          model: TextNote,
-          as: "textNotes",
-          where: { type: "maintenance" },
-          required: false,
-        },
-        {
-          model: PhotographicNote,
-          as: "photographicNotes",
-          where: { type: "maintenance" },
-          required: false,
+          model: ElemetModel,
+          as: 'element_model',
         }
       ],
-    });
+    },
+    {
+      model: VocalNote,
+      as: "vocalNotes",
+      where: { type: "maintenance" },
+      required: false, 
+    },
+    {
+      model: TextNote,
+      as: "textNotes",
+      where: { type: "maintenance" },
+      required: false,
+    },
+    {
+      model: PhotographicNote,
+      as: "photographicNotes",
+      where: { type: "maintenance" },
+      required: false,
+    }
+  ],
+});
+
 
 
     res.status(200).json({ jobs });
@@ -176,74 +213,101 @@ exports.getMaintenanceLevels = async (req, res) => {
 
 exports.getJob = async (req, res) => {
   try {
-    const { taskId } = req.query;
+    const { taskId, page } = req.query;
 
     if (!taskId) {
       return res.status(400).json({ error: "Missing taskId" });
     }
 
-    const whereClause = {
-      id: taskId,
-    };
-
     const jobs = await JobExecution.findAll({
-      where: whereClause,
+      where: { id: taskId },
       order: [["ending_date", "ASC"]],
       include: [
-        {
-          model: recurrencyType,
-          as: 'recurrencyType',
-        },
+        { model: recurrencyType, as: "recurrencyType" },
         {
           model: Job,
-          as: 'job',
+          as: "job",
           include: [
             {
               model: Maintenance_List,
-              as: 'maintenance_list',
+              as: "maintenance_list",
               include: [
-                {
-                  model: maintenanceLevel,
-                  as: 'maintenance_level',
-                }
-              ]
+                { model: maintenanceLevel, as: "maintenance_level" },
+              ],
             },
             {
               model: Team,
-              as: 'team',
-              include: [
-                {
-                  model: User,
-                  as: 'teamLeader',
-                }
-              ]
+              as: "team",
+              include: [{ model: User, as: "teamLeader" }],
             },
-          ]
+          ],
         },
-        {
-          model: JobStatus,
-          as: 'status',
-        },
+        { model: JobStatus, as: "status" },
         {
           model: Element,
-          as: 'Element',
-          include: [
-            {
-              model: ElemetModel,
-              as: 'element_model',
-            }
-          ],
+          as: "Element",
+          include: [{ model: ElemetModel, as: "element_model" }],
         },
       ],
     });
 
-    res.status(200).json({ jobs });
+    const getSignedFileUrl = async (fileName) => {
+          try {
+            const list = await s3
+              .listObjectsV2({
+                Bucket: BUCKET_NAME,
+                Prefix: "",
+              })
+              .promise();
+    
+            const found = list.Contents.find((obj) =>
+              obj.Key.toLowerCase().includes(fileName.toLowerCase())
+            );
+    
+            if (!found) return null;
+    
+            const command = new GetObjectCommand({
+              Bucket: BUCKET_NAME,
+              Key: found.Key,
+            });
+    
+            return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          } catch (err) {
+            console.error("Errore cercando file su S3:", err);
+            return null;
+          }
+        };
 
+    const enrichedJobs = await Promise.all(
+      jobs.map(async (job) => {
+        let documentFileUrl = null;
+
+        // Se esiste un Reference_document nella maintenance_list → genero URL firmato
+        const referenceDoc = job.job?.maintenance_list?.Reference_document;
+        if (referenceDoc) {
+          documentFileUrl = await getSignedFileUrl(referenceDoc);
+
+          // aggiungo #page se richiesto via query o se c'è maintenance_list.page
+          const desiredPage = page || job.job.maintenance_list.page;
+          if (documentFileUrl && desiredPage) {
+            documentFileUrl = `${documentFileUrl}#page=${desiredPage}`;
+          }
+        }
+
+        return {
+          ...job.toJSON(),
+          documentFileUrl,
+        };
+      })
+    );
+
+    res.status(200).json({ jobs: enrichedJobs });
   } catch (error) {
     console.error("Error fetching jobs:", error);
     res.status(500).json({ error: "Error fetching jobs" });
   }
 };
+
 
 exports.updateStatus = async (req, res) => {
   try {
