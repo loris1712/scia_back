@@ -56,15 +56,12 @@ exports.getFailures = async (req, res) => {
       ],
     });
 
-    console.log(ship_id)
-    console.log(userId)
     // -------- TASKS --------
     let tasks = [];
-    if (ship_id && userId) {
+    if (ship_id) {
       const jobs = await JobExecution.findAll({
         where: {
           ship_id,
-          user_id: userId,
         },
         order: [["ending_date", "ASC"]],
         include: [

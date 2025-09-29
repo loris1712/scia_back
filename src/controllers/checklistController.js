@@ -12,7 +12,6 @@ exports.getTasks = async (req, res) => {
 
     const whereClause = {
       ship_id,
-      user_id: userId,
     };
 
     const jobs = await JobExecution.findAll({

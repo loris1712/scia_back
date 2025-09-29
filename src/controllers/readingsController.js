@@ -11,7 +11,6 @@ exports.getReadings = async (req, res) => {
     const readings = await Readings.findAll({
       where: {
         ship_id,
-        user_id,
       },
       include: [
         {
