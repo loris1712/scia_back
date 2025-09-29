@@ -126,7 +126,7 @@ exports.getFailures = async (req, res) => {
       tasks = jobs.filter(
         (job) => job.job?.maintenance_list?.Check_List === "2"
       );
-      console.log(tasks)
+      //console.log(tasks)
     }
 
     // -------- RESPONSE --------

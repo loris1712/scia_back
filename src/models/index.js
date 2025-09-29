@@ -174,6 +174,17 @@ OrganizationCompanyNCAGE.hasMany(Parts, {
   as: "parts" 
 });
 
+Maintenance_List.belongsTo(recurrencyType, {
+  foreignKey: "RecurrencyType_ID",
+  as: "recurrencyType",
+});
+
+recurrencyType.hasMany(Maintenance_List, {
+  foreignKey: "RecurrencyType_ID",
+  as: "maintenance_lists",
+});
+
+
 const db = { sequelize, Job, Element, Ship, JobStatus, 
   JobExecution, User, UserLogin, UserRole, Team, UserSettings, Spare, 
   RanksMarine, Task, recurrencyType, Facilities, Cart, Location, Warehouses,

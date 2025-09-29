@@ -22,7 +22,7 @@ exports.getTasks = async (req, res) => {
           model: recurrencyType,
           as: 'recurrencyType',
         },
-        {
+        { 
           model: Job,
           as: 'job',
           required: true,
@@ -35,7 +35,11 @@ exports.getTasks = async (req, res) => {
                 {
                   model: maintenanceLevel,
                   as: 'maintenance_level',
-                }
+                },
+                {
+              model: recurrencyType,     
+              as: 'recurrencyType',
+            }
               ]
             },
           ]
