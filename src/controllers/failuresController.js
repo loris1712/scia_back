@@ -1,4 +1,6 @@
-const { Failures, User } = require("../models");
+const { Failures, User, Task, recurrencyType, Element, JobExecution, Job, 
+  JobStatus, Maintenance_List, maintenanceLevel, ElemetModel, 
+  VocalNote, TextNote, PhotographicNote, Team } = require("../models");
 
 exports.addFailure = async (req, res) => {
   try {
@@ -35,15 +37,16 @@ exports.addFailure = async (req, res) => {
 
 exports.getFailures = async (req, res) => {
   try {
-    const { gravity, executionUserType, ship_id } = req.query;
+    const { gravity, executionUserType, ship_id, userId } = req.query;
 
-    const whereClause = {};
-    if (gravity) whereClause.gravity = gravity;
-    if (executionUserType) whereClause.executionUserType = executionUserType;
-    if (ship_id) whereClause.ship_id = ship_id;
+    // -------- FAILURES --------
+    const failuresWhere = {};
+    if (gravity) failuresWhere.gravity = gravity;
+    if (executionUserType) failuresWhere.executionUserType = executionUserType;
+    if (ship_id) failuresWhere.ship_id = ship_id;
 
     const failures = await Failures.findAll({
-      where: whereClause,
+      where: failuresWhere,
       order: [["date", "DESC"]],
       include: [
         {
@@ -53,9 +56,89 @@ exports.getFailures = async (req, res) => {
       ],
     });
 
-    return res.status(200).json({ failures });
+    console.log(ship_id)
+    console.log(userId)
+    // -------- TASKS --------
+    let tasks = [];
+    if (ship_id && userId) {
+      const jobs = await JobExecution.findAll({
+        where: {
+          ship_id,
+          user_id: userId,
+        },
+        order: [["ending_date", "ASC"]],
+        include: [
+          {
+            model: recurrencyType,
+            as: "recurrencyType",
+          },
+          {
+            model: Job,
+            as: "job",
+            required: true,
+            include: [
+              {
+                model: Maintenance_List,
+                as: "maintenance_list",
+                required: false,
+                include: [
+                  {
+                    model: maintenanceLevel,
+                    as: "maintenance_level",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            model: JobStatus,
+            as: "status",
+          },
+          {
+            model: Element,
+            as: "Element",
+            include: [
+              {
+                model: ElemetModel,
+                as: "element_model",
+              },
+            ],
+          },
+          {
+            model: VocalNote,
+            as: "vocalNotes",
+            where: { type: "maintenance" },
+            required: false,
+          },
+          {
+            model: TextNote,
+            as: "textNotes",
+            where: { type: "maintenance" },
+            required: false,
+          },
+          {
+            model: PhotographicNote,
+            as: "photographicNotes",
+            where: { type: "maintenance" },
+            required: false,
+          },
+        ],
+      });
+
+      // 🔧 Filtriamo solo le checklist con valore "2"
+      tasks = jobs.filter(
+        (job) => job.job?.maintenance_list?.Check_List === "2"
+      );
+      console.log(tasks)
+    }
+
+    // -------- RESPONSE --------
+    return res.status(200).json({
+      failures,
+      tasks,
+    });
   } catch (error) {
-    console.error("Error fetching failures:", error);
-    return res.status(500).json({ error: "Error retrieving failures" });
+    console.error("Error fetching failures/tasks:", error);
+    return res.status(500).json({ error: "Error retrieving failures and tasks" });
   }
 };
