@@ -33,6 +33,9 @@ const usersAdminRoutes = require("./routes/admin/usersRoutes");
 const teamsAdminRoutes = require("./routes/admin/teamsRoutes");
 const projectsAdminRoutes = require("./routes/admin/projectsRoutes");
 const shipyardsAdminRoutes = require("./routes/admin/shipyardsRoutes");
+const shipsAdminRoutes = require("./routes/admin/shipsRoutes");
+const ownerAdminRoutes = require("./routes/admin/ownersRoutes");
+const eswbsRoutes = require("./routes/admin/eswbs");
 
 const app = express();
 
@@ -46,7 +49,7 @@ const allowedOrigins = [
   "http://localhost:3002",
   "http://52.59.162.108:3000",
   "https://scia-frontend.vercel.app"
-];
+]; 
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -89,6 +92,9 @@ app.use("/api/admin/users", usersAdminRoutes);
 app.use("/api/admin/teams", teamsAdminRoutes); 
 app.use("/api/admin/projects", projectsAdminRoutes); 
 app.use("/api/admin/shipyards", shipyardsAdminRoutes); 
+app.use("/api/admin/ships", shipsAdminRoutes); 
+app.use("/api/admin/owners", ownerAdminRoutes); 
+app.use("/api/admin/eswbs", eswbsRoutes);
 
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))

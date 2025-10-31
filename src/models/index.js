@@ -37,12 +37,22 @@ const OrganizationCompanyNCAGE = require("./OrganizationCompanyNCAGE.js");
 const TeamMember = require("./teamMember.js");
 const ProjectCommission = require("./projectCommission.js");
 const Shipyards = require("./shipyard.js");
+const shipModel = require("./shipModel.js");
+const Owner = require("./owner");
+const ESWBS_Glossary = require("./ESWBS_Glossary");
+
+Owner.belongsTo(OrganizationCompanyNCAGE, {
+  foreignKey: "OrganizationCompanyNCAGE_ID",
+  as: "organizationCompany",
+});
+
+OrganizationCompanyNCAGE.hasMany(Owner, {
+  foreignKey: "OrganizationCompanyNCAGE_ID",
+  as: "owners",
+});
 
 Facilities.hasMany(Facilities, { as: "subFacilities", foreignKey: "parent_id" });
 Facilities.belongsTo(Facilities, { as: "parentFacility", foreignKey: "parent_id" });
-
-Job.hasMany(JobExecution, { foreignKey: "job_id" });
-JobExecution.belongsTo(Job, { foreignKey: "job_id" });
 
 Element.hasMany(JobExecution, { foreignKey: "element_eswbs_instance_id" });
 JobExecution.belongsTo(Element, { foreignKey: "element_eswbs_instance_id" });
@@ -55,6 +65,22 @@ Ship.hasMany(Element, { foreignKey: "ship_id", as: "elements" });
 
 Team.belongsTo(User, { as: "leader", foreignKey: "team_leader_id" }); 
 User.hasOne(Team, { as: "managedTeam", foreignKey: "team_leader_id" });
+
+// JOBEXECUTION ↔ MAINTENANCE LIST
+JobExecution.belongsTo(Maintenance_List, {
+  foreignKey: 'job_id',
+  as: 'maintenance_list',
+});
+
+Maintenance_List.hasMany(JobExecution, {
+  foreignKey: 'job_id',
+  as: 'executions',
+});
+
+
+// MAINTENANCE LIST ↔ MAINTENANCE LEVEL / RECURRENCY TYPE
+Maintenance_List.belongsTo(maintenanceLevel, { foreignKey: 'MaintenanceLevel_ID', as: 'maintenance_level' });
+Maintenance_List.belongsTo(recurrencyType, { foreignKey: 'RecurrencyType_ID', as: 'recurrencyType' });
 
 User.belongsTo(Team, { as: "userTeam", foreignKey: "team_id" });
 Team.hasMany(User, { as: "teamMembers", foreignKey: "team_id" });
@@ -104,32 +130,11 @@ TextNote.belongsTo(User, { foreignKey: 'author', as: 'authorDetails' });
 User.hasMany(TextNote, { foreignKey: 'author', as: 'textNotes' });
 
 JobExecution.belongsTo(recurrencyType, { foreignKey: 'recurrency_type_id', as: 'recurrencyType' });
-JobExecution.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
 JobExecution.belongsTo(JobStatus, { foreignKey: 'status_id', as: 'status' });
 
 Element.belongsTo(ElemetModel, {
   foreignKey: 'element_model_id',
   as: 'element_model'
-});
-
-Job.belongsTo(Maintenance_List, {
-  foreignKey: 'maintenance_list_id',
-  as: 'maintenance_list',
-});
-
-Maintenance_List.hasMany(Job, {
-  foreignKey: 'maintenance_list_id',
-  as: 'jobs',
-});
-
-Maintenance_List.belongsTo(maintenanceLevel, {
-    foreignKey: "MaintenanceLevel_ID",
-    as: "maintenance_level",
-});
-
-maintenanceLevel.hasMany(Maintenance_List, {
-    foreignKey: "MaintenanceLevel_ID",
-    as: "maintenance_lists",
 });
 
 JobExecution.hasMany(VocalNote, { foreignKey: "task_id", as: "vocalNotes" });
@@ -174,14 +179,23 @@ OrganizationCompanyNCAGE.hasMany(Parts, {
   as: "parts" 
 });
 
-Maintenance_List.belongsTo(recurrencyType, {
-  foreignKey: "RecurrencyType_ID",
-  as: "recurrencyType",
+ProjectCommission.belongsTo(Shipyards, {
+  foreignKey: "shipyard_builder_id",
+  as: "shipyard",
+});
+Shipyards.hasMany(ProjectCommission, {
+  foreignKey: "shipyard_builder_id",
+  as: "projects",
 });
 
-recurrencyType.hasMany(Maintenance_List, {
-  foreignKey: "RecurrencyType_ID",
-  as: "maintenance_lists",
+// 🔹 Ogni commessa può avere più navi associateJobExecution
+ProjectCommission.hasMany(Ship, {
+  foreignKey: "project_id",
+  as: "ships",
+});
+Ship.belongsTo(ProjectCommission, {
+  foreignKey: "project_id",
+  as: "project",
 });
 
 
@@ -191,6 +205,6 @@ const db = { sequelize, Job, Element, Ship, JobStatus,
   ShipFiles, Readings, ReadingsType, Scans, Failures, PhotographicNote, VocalNote, TextNote,
   MaintenanceType, ElemetModel, maintenanceLevel, Maintenance_List,
   StatusCommentsMaintenance, maintenanceListSpareAdded, Parts, OrganizationCompanyNCAGE,
-  TeamMember, ProjectCommission, Shipyards };
+  TeamMember, ProjectCommission, Shipyards, shipModel, Owner, ESWBS_Glossary };
 
 module.exports = db;

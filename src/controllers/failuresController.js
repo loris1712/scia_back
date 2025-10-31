@@ -52,6 +52,7 @@ exports.getFailures = async (req, res) => {
         {
           model: User,
           as: "userExecutionData",
+          required: false,
         },
       ],
     });
@@ -60,44 +61,45 @@ exports.getFailures = async (req, res) => {
     let tasks = [];
     if (ship_id) {
       const jobs = await JobExecution.findAll({
-        where: {
-          ship_id,
-        },
+        where: { ship_id },
         order: [["ending_date", "ASC"]],
         include: [
           {
-            model: recurrencyType,
-            as: "recurrencyType",
-          },
-          {
-            model: Job,
-            as: "job",
+            model: Maintenance_List,
+            as: "maintenance_list",
             required: true,
             include: [
               {
-                model: Maintenance_List,
-                as: "maintenance_list",
+                model: maintenanceLevel,
+                as: "maintenance_level",
                 required: false,
-                include: [
-                  {
-                    model: maintenanceLevel,
-                    as: "maintenance_level",
-                  },
-                ],
+              },
+              {
+                model: recurrencyType,
+                as: "recurrencyType",
+                required: false,
               },
             ],
           },
           {
+            model: recurrencyType,
+            as: "recurrencyType",
+            required: false,
+          },
+          {
             model: JobStatus,
             as: "status",
+            required: false,
           },
           {
             model: Element,
             as: "Element",
+            required: false,
             include: [
               {
                 model: ElemetModel,
                 as: "element_model",
+                required: false,
               },
             ],
           },
@@ -124,9 +126,8 @@ exports.getFailures = async (req, res) => {
 
       // 🔧 Filtriamo solo le checklist con valore "2"
       tasks = jobs.filter(
-        (job) => job.job?.maintenance_list?.Check_List === "2"
+        (job) => job.maintenance_list?.Check_List === "2"
       );
-      //console.log(tasks)
     }
 
     // -------- RESPONSE --------
@@ -136,6 +137,9 @@ exports.getFailures = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching failures/tasks:", error);
-    return res.status(500).json({ error: "Error retrieving failures and tasks" });
+    return res
+      .status(500)
+      .json({ error: "Error retrieving failures and tasks" });
   }
 };
+

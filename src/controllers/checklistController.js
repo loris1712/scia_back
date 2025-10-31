@@ -10,52 +10,49 @@ exports.getTasks = async (req, res) => {
       return res.status(400).json({ error: "Missing ship_id or user_id" });
     }
 
-    const whereClause = {
-      ship_id,
-    };
+    const whereClause = { ship_id };
 
     const jobs = await JobExecution.findAll({
       where: whereClause,
       order: [["ending_date", "ASC"]],
       include: [
         {
-          model: recurrencyType,
-          as: 'recurrencyType',
-        },
-        { 
-          model: Job,
-          as: 'job',
+          model: Maintenance_List,
+          as: "maintenance_list",
           required: true,
           include: [
             {
-              model: Maintenance_List,
-              as: 'maintenance_list',
+              model: maintenanceLevel,
+              as: "maintenance_level",
               required: false,
-              include: [
-                {
-                  model: maintenanceLevel,
-                  as: 'maintenance_level',
-                },
-                {
-              model: recurrencyType,     
-              as: 'recurrencyType',
-            }
-              ]
             },
-          ]
-        }, 
+            {
+              model: recurrencyType,
+              as: "recurrencyType",
+              required: false,
+            },
+          ],
+        },
+        {
+          model: recurrencyType,
+          as: "recurrencyType",
+          required: false,
+        },
         {
           model: JobStatus,
-          as: 'status',
+          as: "status",
+          required: false,
         },
         {
           model: Element,
-          as: 'Element',
+          as: "Element",
+          required: false,
           include: [
             {
               model: ElemetModel,
-              as: 'element_model',
-            }
+              as: "element_model",
+              required: false,
+            },
           ],
         },
         {
@@ -75,21 +72,22 @@ exports.getTasks = async (req, res) => {
           as: "photographicNotes",
           where: { type: "maintenance" },
           required: false,
-        }
+        },
       ],
     });
 
-    const checklistJobs = jobs.filter(job => 
-      job.job?.maintenance_list?.Check_List === "1"
+    // 🔍 Filtra solo quelli con Check_List === "1"
+    const checklistJobs = jobs.filter(
+      (job) => job.maintenance_list?.Check_List === "1"
     );
 
-  res.status(200).json({ tasks: checklistJobs });
-
+    res.status(200).json({ tasks: checklistJobs });
   } catch (error) {
-    console.error("Error fetching jobs:", error);
-    res.status(500).json({ error: "Error fetching jobs" });
+    console.error("Error fetching tasks:", error);
+    res.status(500).json({ error: "Error fetching tasks" });
   }
 };
+
 
 exports.getTypes = async (req, res) => {
   try {

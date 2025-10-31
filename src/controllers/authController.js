@@ -4,54 +4,6 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const SECRET_KEY = "supersecretkey";
 
-/*exports.loginWithEmail = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const userLogin = await UserLogin.findOne({ where: { email } });
-
-    if (!userLogin) {
-      return res.status(401).json({ error: "Credentials are not valid." });
-    }
-
-  //const password2 = "123";
-  //const saltRounds = 10;
-  //const hash = await bcrypt.hash(password2, saltRounds);
-  //console.log(hash);
-
-    const isMatch = await bcrypt.compare(password, userLogin.password_hash);
-
-    if (!isMatch) {
-      return res.status(401).json({ error: "Credentials are not valid." });
-    }
-
-    const token = jwt.sign(
-      { userId: userLogin.user_id, email: userLogin.email },
-      process.env.SECRET_KEY
-    );
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,           // Richiesto su HTTPS
-      sameSite: "None",       // Per permettere cookie cross-origin
-      maxAge: 2 * 60 * 60 * 1000,
-    });
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "Lax",
-      maxAge: 2 * 60 * 60 * 1000, // 2 ore
-    });
-
-    res.json({ message: "Login successful" });
-  } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ error: "Error during login" });
-  }
-};*/
-
-
 exports.loginWithEmail = async (req, res) => {
   const { email, password } = req.body;
 
@@ -68,13 +20,16 @@ exports.loginWithEmail = async (req, res) => {
       return res.status(401).json({ error: "Credentials are not valid." });
     }
 
+    console.log(isMatch)
+
     const token = jwt.sign(
       { userId: userLogin.user_id, email: userLogin.email },
       process.env.SECRET_KEY,
       { expiresIn: '2h' }
     );
 
-    // NON più cookie, ma token nel body
+    console.log(token)
+    
     return res.json({
       message: "Login successful",
       token,

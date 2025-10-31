@@ -1,20 +1,12 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-const ProjectCommission = sequelize.define('ProjectCommission', {
+const ProjectCommissionShipModel = sequelize.define('ProjectCommissionShipModel', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true
   },
-  name: {
-    type: DataTypes.STRING(100),
-    allowNull: false
-  },
-  description: {
-    type: DataTypes.STRING(200),
-    allowNull: true
-  }, 
   expected_delivery: {
     type: DataTypes.DATE,
     allowNull: true 
@@ -23,7 +15,7 @@ const ProjectCommission = sequelize.define('ProjectCommission', {
     type: DataTypes.DATE,
     allowNull: true
   },
-  project_commission_id: {
+  ship_model_id: {
     type: DataTypes.INTEGER,
     allowNull: true
   },
@@ -32,8 +24,8 @@ const ProjectCommission = sequelize.define('ProjectCommission', {
     allowNull: true
   }
 }, {
-  tableName: "ProjectCommission",
+  tableName: "ProjectCommissionShipModel",
   timestamps: false
 });
 
-module.exports = ProjectCommission;
+module.exports = ProjectCommissionShipModel;

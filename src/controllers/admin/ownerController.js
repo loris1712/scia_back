@@ -1,11 +1,11 @@
-const { Shipyards } = require("../../models");
+const { Owner } = require("../../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-exports.getShipyard = async (req, res) => {
+exports.getOwners = async (req, res) => {
   try {
-    const users = await Shipyards.findAll({
+    const users = await Owner.findAll({
       order: [["companyName", "ASC"]],
     });
 

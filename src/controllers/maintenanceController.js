@@ -43,81 +43,37 @@ exports.getJobs = async (req, res) => {
       return res.status(400).json({ error: "Missing ship_id or user_id" });
     }
 
-    const whereClause = {
-      ship_id,
-    };
-
-    if (type_id !== "undefined") {
-      whereClause.recurrency_type_id = type_id;
-    }
+    const whereClause = { ship_id };
+    if (type_id && type_id !== "undefined") whereClause.recurrency_type_id = type_id;
 
     const jobs = await JobExecution.findAll({
-  where: whereClause,
-  order: [["ending_date", "ASC"]],
-  include: [
-    {
-      model: recurrencyType,
-      as: 'recurrencyType',
-    },
-    {
-      model: Job,
-      as: 'job',
+      where: whereClause,
+      order: [["ending_date", "ASC"]],
       include: [
         {
           model: Maintenance_List,
           as: 'maintenance_list',
+          required: false,
           include: [
-            {
-              model: maintenanceLevel,
-              as: 'maintenance_level',
-            },
-            {
-              model: recurrencyType,     
-              as: 'recurrencyType',
-            }
+            { model: maintenanceLevel, as: 'maintenance_level', required: false },
+            { model: recurrencyType, as: 'recurrencyType', required: false }
           ]
         },
-      ]
-    },
-    {
-      model: JobStatus,
-      as: 'status',
-    },
-    {
-      model: Element,
-      as: 'Element',
-      include: [
+        { model: recurrencyType, as: 'recurrencyType', required: false },
+        { model: JobStatus, as: 'status', required: false },
         {
-          model: ElemetModel,
-          as: 'element_model',
-        }
+          model: Element,
+          as: 'Element',
+          required: false,
+          include: [{ model: ElemetModel, as: 'element_model', required: false }]
+        },
+        { model: VocalNote, as: 'vocalNotes', where: { type: 'maintenance' }, required: false },
+        { model: TextNote, as: 'textNotes', where: { type: 'maintenance' }, required: false },
+        { model: PhotographicNote, as: 'photographicNotes', where: { type: 'maintenance' }, required: false },
       ],
-    },
-    {
-      model: VocalNote,
-      as: "vocalNotes",
-      where: { type: "maintenance" },
-      required: false, 
-    },
-    {
-      model: TextNote,
-      as: "textNotes",
-      where: { type: "maintenance" },
-      required: false,
-    },
-    {
-      model: PhotographicNote,
-      as: "photographicNotes",
-      where: { type: "maintenance" },
-      required: false,
-    }
-  ],
-});
-
-
+    });
 
     res.status(200).json({ jobs });
-
   } catch (error) {
     console.error("Error fetching jobs:", error);
     res.status(500).json({ error: "Error fetching jobs" });
@@ -219,76 +175,91 @@ exports.getJob = async (req, res) => {
       return res.status(400).json({ error: "Missing taskId" });
     }
 
+    // 🔹 Recupera la singola JobExecution con join diretta alla Maintenance_List
     const jobs = await JobExecution.findAll({
       where: { id: taskId },
       order: [["ending_date", "ASC"]],
       include: [
-        { model: recurrencyType, as: "recurrencyType" },
         {
-          model: Job,
-          as: "job",
+          model: Maintenance_List,
+          as: "maintenance_list",
+          required: false,
           include: [
             {
-              model: Maintenance_List,
-              as: "maintenance_list",
-              include: [
-                { model: maintenanceLevel, as: "maintenance_level" },
-              ],
+              model: maintenanceLevel,
+              as: "maintenance_level",
+              required: false,
             },
             {
-              model: Team,
-              as: "team",
-              include: [{ model: User, as: "teamLeader" }],
+              model: recurrencyType,
+              as: "recurrencyType",
+              required: false,
             },
           ],
         },
-        { model: JobStatus, as: "status" },
+        {
+          model: recurrencyType,
+          as: "recurrencyType",
+          required: false,
+        },
+        {
+          model: JobStatus,
+          as: "status",
+          required: false,
+        },
         {
           model: Element,
           as: "Element",
-          include: [{ model: ElemetModel, as: "element_model" }],
+          required: false,
+          include: [
+            {
+              model: ElemetModel,
+              as: "element_model",
+              required: false,
+            },
+          ],
         },
       ],
     });
 
+    // 🔹 Funzione per generare link firmato S3
     const getSignedFileUrl = async (fileName) => {
-          try {
-            const list = await s3
-              .listObjectsV2({
-                Bucket: BUCKET_NAME,
-                Prefix: "",
-              })
-              .promise();
-    
-            const found = list.Contents.find((obj) =>
-              obj.Key.toLowerCase().includes(fileName.toLowerCase())
-            );
-    
-            if (!found) return null;
-    
-            const command = new GetObjectCommand({
-              Bucket: BUCKET_NAME,
-              Key: found.Key,
-            });
-    
-            return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-          } catch (err) {
-            console.error("Errore cercando file su S3:", err);
-            return null;
-          }
-        };
+      try {
+        const list = await s3
+          .listObjectsV2({
+            Bucket: BUCKET_NAME,
+            Prefix: "",
+          })
+          .promise();
 
+        const found = list.Contents.find((obj) =>
+          obj.Key.toLowerCase().includes(fileName.toLowerCase())
+        );
+
+        if (!found) return null;
+
+        const command = new GetObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: found.Key,
+        });
+
+        return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      } catch (err) {
+        console.error("Errore cercando file su S3:", err);
+        return null;
+      }
+    };
+
+    // 🔹 Aggiungo documentFileUrl con pagina opzionale
     const enrichedJobs = await Promise.all(
       jobs.map(async (job) => {
         let documentFileUrl = null;
 
-        // Se esiste un Reference_document nella maintenance_list → genero URL firmato
-        const referenceDoc = job.job?.maintenance_list?.Reference_document;
+        const referenceDoc = job.maintenance_list?.Reference_document;
         if (referenceDoc) {
           documentFileUrl = await getSignedFileUrl(referenceDoc);
 
-          // aggiungo #page se richiesto via query o se c'è maintenance_list.page
-          const desiredPage = page || job.job.maintenance_list.page;
+          const desiredPage = page || job.maintenance_list?.page;
           if (documentFileUrl && desiredPage) {
             documentFileUrl = `${documentFileUrl}#page=${desiredPage}`;
           }
@@ -303,11 +274,10 @@ exports.getJob = async (req, res) => {
 
     res.status(200).json({ jobs: enrichedJobs });
   } catch (error) {
-    console.error("Error fetching jobs:", error);
-    res.status(500).json({ error: "Error fetching jobs" });
+    console.error("Error fetching job:", error);
+    res.status(500).json({ error: "Error fetching job" });
   }
 };
-
 
 exports.updateStatus = async (req, res) => {
   try {
