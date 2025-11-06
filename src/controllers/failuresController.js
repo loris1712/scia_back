@@ -76,14 +76,14 @@ exports.getFailures = async (req, res) => {
               },
               {
                 model: recurrencyType,
-                as: "recurrencyType",
+                as: "recurrency_type",
                 required: false,
               },
             ],
           },
           {
             model: recurrencyType,
-            as: "recurrencyType",
+            as: "recurrency_type",
             required: false,
           },
           {

@@ -145,7 +145,7 @@ User.hasMany(VocalNote, { foreignKey: 'author', as: 'vocalNotes' });
 TextNote.belongsTo(User, { foreignKey: 'author', as: 'authorDetails' });
 User.hasMany(TextNote, { foreignKey: 'author', as: 'textNotes' });
 
-JobExecution.belongsTo(recurrencyType, { foreignKey: 'recurrency_type_id', as: 'recurrencyType' });
+JobExecution.belongsTo(recurrencyType, { foreignKey: 'recurrency_type_id', as: 'recurrency_type' });
 JobExecution.belongsTo(JobStatus, { foreignKey: 'status_id', as: 'status' });
 
 Element.belongsTo(ElemetModel, {

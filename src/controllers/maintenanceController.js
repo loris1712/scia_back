@@ -56,10 +56,10 @@ exports.getJobs = async (req, res) => {
           required: false,
           include: [
             { model: maintenanceLevel, as: 'maintenance_level', required: false },
-            { model: recurrencyType, as: 'recurrencyType', required: false }
+            { model: recurrencyType, as: 'recurrency_type', required: false }
           ]
         },
-        { model: recurrencyType, as: 'recurrencyType', required: false },
+        { model: recurrencyType, as: 'recurrency_type', required: false },
         { model: JobStatus, as: 'status', required: false },
         {
           model: Element,
@@ -192,14 +192,14 @@ exports.getJob = async (req, res) => {
             },
             {
               model: recurrencyType,
-              as: "recurrencyType",
+              as: "recurrency_type",
               required: false,
             },
           ],
         },
         {
           model: recurrencyType,
-          as: "recurrencyType",
+          as: "recurrency_type",
           required: false,
         },
         {
