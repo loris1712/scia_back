@@ -12,7 +12,7 @@ const Ship = sequelize.define("Ship", {
     launch_date: { type: DataTypes.DATE },
     delivery_date: { type: DataTypes.DATE },
     Side_ship_number: { type: DataTypes.STRING(255) },
-    team: { type: DataTypes.INTEGER }   // ✅ sostituito user_id con team
+    team: { type: DataTypes.INTEGER } 
 }, {
     tableName: "Ship",
     timestamps: false

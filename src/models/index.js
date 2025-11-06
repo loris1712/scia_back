@@ -77,10 +77,26 @@ Maintenance_List.hasMany(JobExecution, {
   as: 'executions',
 });
 
+// MAINTENANCE LIST ↔ MAINTENANCE LEVEL / TYPE / RECURRENCY / ELEMENT MODEL
+Maintenance_List.belongsTo(maintenanceLevel, {
+  foreignKey: "MaintenanceLevel_ID",
+  as: "maintenance_level",
+});
 
-// MAINTENANCE LIST ↔ MAINTENANCE LEVEL / RECURRENCY TYPE
-Maintenance_List.belongsTo(maintenanceLevel, { foreignKey: 'MaintenanceLevel_ID', as: 'maintenance_level' });
-Maintenance_List.belongsTo(recurrencyType, { foreignKey: 'RecurrencyType_ID', as: 'recurrencyType' });
+Maintenance_List.belongsTo(MaintenanceType, {
+  foreignKey: "Maintenance_type_id",
+  as: "maintenance_type",
+});
+
+Maintenance_List.belongsTo(recurrencyType, {
+  foreignKey: "RecurrencyType_ID",
+  as: "recurrency_type",
+});
+
+Maintenance_List.belongsTo(ElemetModel, {
+  foreignKey: "System_ElementModel_ID",
+  as: "element_model",
+});
 
 User.belongsTo(Team, { as: "userTeam", foreignKey: "team_id" });
 Team.hasMany(User, { as: "teamMembers", foreignKey: "team_id" });

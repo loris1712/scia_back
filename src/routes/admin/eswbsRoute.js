@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const eswbsController = require("../../controllers/admin/eswbsController");
 
-// Ottieni glossario ESWBS
 router.get("/glossary", eswbsController.getESWBSGlossary);
+router.post("/saveElementModel", eswbsController.saveElementModels);
+router.get("/getElementModels", eswbsController.getElementModels);
 
 module.exports = router;

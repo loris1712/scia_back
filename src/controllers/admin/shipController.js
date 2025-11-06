@@ -10,7 +10,6 @@ exports.getShipsByModel = async (req, res) => {
         .json({ error: "Parametri mancanti: userId o shipModelId" });
     }
 
-    // 🔹 1️⃣ Trova tutti i team a cui appartiene l'utente
     const memberships = await TeamMember.findAll({
       where: { user_id: userId },
       attributes: ["team_id"],
@@ -26,6 +25,8 @@ exports.getShipsByModel = async (req, res) => {
     }
 
     const teamIds = memberships.map((m) => m.team_id);
+
+    console.log(teamIds)
 
     const ships = await Ship.findAll({
       where: {
