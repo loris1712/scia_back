@@ -66,7 +66,18 @@ Ship.hasMany(Element, { foreignKey: "ship_id", as: "elements" });
 Team.belongsTo(User, { as: "leader", foreignKey: "team_leader_id" }); 
 User.hasOne(Team, { as: "managedTeam", foreignKey: "team_leader_id" });
 
-// JOBEXECUTION ↔ MAINTENANCE LIST
+// 🔹 SHIPYARD ↔ ORGANIZATION COMPANY NCAGE
+Shipyards.belongsTo(OrganizationCompanyNCAGE, {
+  foreignKey: "OrganizationCompanyNCAGE_ID",
+  as: "organizationCompanyNCAGE",
+});
+
+OrganizationCompanyNCAGE.hasMany(Shipyards, {
+  foreignKey: "OrganizationCompanyNCAGE_ID",
+  as: "shipyards",
+});
+
+
 JobExecution.belongsTo(Maintenance_List, {
   foreignKey: 'job_id',
   as: 'maintenance_list',

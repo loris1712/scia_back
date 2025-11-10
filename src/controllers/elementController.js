@@ -108,9 +108,9 @@ exports.getElement = async (req, res) => {
         }) 
       : null;
 
-    const parts = elementModel.Manufacturer_Parts_ID
+    const parts = elementModel.Manufacturer_ID
       ? await Parts.findOne({
-          where: { ID: elementModel.Manufacturer_Parts_ID },
+          where: { ID: elementModel.Manufacturer_ID },
           raw: true,
         })
       : null;

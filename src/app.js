@@ -37,6 +37,7 @@ const shipsAdminRoutes = require("./routes/admin/shipsRoutes");
 const ownerAdminRoutes = require("./routes/admin/ownersRoutes");
 const ESWBSRoutes = require("./routes/admin/eswbsRoute");
 const maintenanceAdminRoutes = require("./routes/admin/maintenanceRoutes");
+const organizationRoutes = require("./routes/admin/organizationRoutes");
 
 const app = express();
 
@@ -97,6 +98,7 @@ app.use("/api/admin/ships", shipsAdminRoutes);
 app.use("/api/admin/owners", ownerAdminRoutes); 
 app.use("/api/admin/eswbs", ESWBSRoutes);
 app.use("/api/admin/maintenance", maintenanceAdminRoutes);
+app.use("/api/admin/organization", organizationRoutes);
 
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))

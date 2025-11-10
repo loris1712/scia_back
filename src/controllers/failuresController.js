@@ -33,7 +33,7 @@ exports.addFailure = async (req, res) => {
     console.error("Error adding failure:", error);
     return res.status(500).json({ error: "Error creating failure" });
   }
-};
+}; 
 
 exports.getFailures = async (req, res) => {
   try {
