@@ -36,7 +36,7 @@ const Failures = sequelize.define('Failures', {
     allowNull: true,
   },
   customFields: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     allowNull: true,
   },
   ship_id: {

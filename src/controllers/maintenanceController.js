@@ -47,31 +47,31 @@ exports.getJobs = async (req, res) => {
     if (type_id && type_id !== "undefined") whereClause.recurrency_type_id = type_id;
 
     const jobs = await JobExecution.findAll({
-      where: whereClause,
-      order: [["ending_date", "ASC"]],
+  where: whereClause,
+  order: [["ending_date", "ASC"]],
+  include: [ 
+    {
+      model: Maintenance_List,
+      as: "maintenance_list",
+      required: false,
       include: [
-        {
-          model: Maintenance_List,
-          as: 'maintenance_list',
-          required: false,
-          include: [
-            { model: maintenanceLevel, as: 'maintenance_level', required: false },
-            { model: recurrencyType, as: 'recurrency_type', required: false }
-          ]
-        },
-        { model: recurrencyType, as: 'recurrency_type', required: false },
-        { model: JobStatus, as: 'status', required: false },
-        {
-          model: Element,
-          as: 'Element',
-          required: false,
-          include: [{ model: ElemetModel, as: 'element_model', required: false }]
-        },
-        { model: VocalNote, as: 'vocalNotes', where: { type: 'maintenance' }, required: false },
-        { model: TextNote, as: 'textNotes', where: { type: 'maintenance' }, required: false },
-        { model: PhotographicNote, as: 'photographicNotes', where: { type: 'maintenance' }, required: false },
+        { model: maintenanceLevel, as: "maintenance_level", required: false },
+        { model: recurrencyType, as: "recurrency_type", required: false },
       ],
-    });
+    },
+    { model: JobStatus, as: "status", required: false },
+    {
+      model: Element,
+      as: "Element",
+      required: false,
+      include: [{ model: ElemetModel, as: "element_model", required: false }],
+    },
+    { model: VocalNote, as: "vocalNotes", where: { type: "maintenance" }, required: false },
+    { model: TextNote, as: "textNotes", where: { type: "maintenance" }, required: false },
+    { model: PhotographicNote, as: "photographicNotes", where: { type: "maintenance" }, required: false },
+  ],
+});
+
 
     res.status(200).json({ jobs });
   } catch (error) {
@@ -196,7 +196,7 @@ exports.getJob = async (req, res) => {
               required: false,
             },
           ],
-        },
+        }, 
         {
           model: recurrencyType,
           as: "recurrency_type",

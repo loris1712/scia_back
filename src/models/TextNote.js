@@ -13,11 +13,11 @@ const TextNote = sequelize.define("TextNote", {
       allowNull: true,
     },
     task_id: {
-      type: DataTypes.TEXT,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     author: {
-      type: DataTypes.TEXT,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     text_field: {

@@ -1,44 +1,43 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
-// JobStatus Model
 const PhotographicNote = sequelize.define("PhotographicNote", {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
-    failure_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
-    task_id: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-    },
-    image_url: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-    },
-    author: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    type: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-    },
-    status: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  failure_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  task_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  image_url: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+  author: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  }, 
+  created_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+  },
+  type: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+  },
+  status: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+  },
 }, {
-    tableName: "PhotographicNote",
-    timestamps: false
+  tableName: "PhotographicNote",
+  timestamps: false,
 });
 
-module.exports = PhotographicNote; 
+module.exports = PhotographicNote;

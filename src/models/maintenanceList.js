@@ -1,12 +1,12 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-const Maintenance_List = sequelize.define('Maintenance_List', {
+const Maintenance_List = sequelize.define('Maintenance', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
-  },
+  },  
   id_ship: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -19,7 +19,7 @@ const Maintenance_List = sequelize.define('Maintenance_List', {
   validity_from_date: {
     type: DataTypes.DATEONLY,
     allowNull: true,
-  },
+  }, 
   validity_to_date: {
     type: DataTypes.DATEONLY,
     allowNull: true,

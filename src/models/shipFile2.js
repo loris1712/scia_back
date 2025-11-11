@@ -12,7 +12,7 @@ const ShipFile = sequelize.define("ShipFiles", {
         allowNull: false,
       },
       file_link: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
       },
       file_name: {

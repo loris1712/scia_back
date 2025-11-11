@@ -27,18 +27,18 @@ const RecurrencyType = sequelize.define(
       allowNull: true,
     }, 
      delay_threshold: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+      type: DataTypes.INTEGER,
+      allowNull: true,
       unique: true,
     },
      due_threshold: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
       unique: true,
     },
      early_threshold: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
       unique: true,
     }, 
   },
