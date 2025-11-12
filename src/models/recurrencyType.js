@@ -39,7 +39,6 @@ const RecurrencyType = sequelize.define(
      early_threshold: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      unique: true,
     }, 
   },
   {

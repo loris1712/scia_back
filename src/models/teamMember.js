@@ -17,10 +17,6 @@ const TeamMember = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    ship_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
     is_leader: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

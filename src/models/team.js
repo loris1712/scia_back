@@ -16,7 +16,11 @@ const Team = sequelize.define(
     name: {
       type: DataTypes.STRING(255),
       allowNull: false,
-    }
+    },
+    ship_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   },
   {
     tableName: "Team",

@@ -76,16 +76,9 @@ exports.getProfile = async (req, res) => {
                 as: "teamLeader",
                 attributes: ["first_name", "last_name"],
               },
-            ],
-          },
-          {
-            model: TeamMember,
-            as: "userTeamMembers",
-            attributes: ["id", "is_leader"],
-            include: [
               {
                 model: Ship,
-                as: "ship",
+                as: "ship", // ✅ ora lo include da Team
                 attributes: [
                   "id",
                   "ship_model_id",
@@ -100,9 +93,38 @@ exports.getProfile = async (req, res) => {
               },
             ],
           },
+          {
+            model: TeamMember,
+            as: "userTeamMembers",
+            attributes: ["id", "is_leader"],
+            include: [
+              {
+                model: Team,
+                as: "team",
+                include: [
+                  {
+                    model: Ship,
+                    as: "ship", // ✅ nave associata al team
+                    attributes: [
+                      "id",
+                      "ship_model_id",
+                      "fleet_id",
+                      "model_code",
+                      "unit_name",
+                      "unit_code",
+                      "launch_date",
+                      "delivery_date",
+                      "Side_ship_number",
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
         ],
       },
     });
+
 
     if (!userLogin || !userLogin.user) {
       return res.status(404).json({ error: "User not found" });
@@ -156,18 +178,24 @@ exports.getProfile = async (req, res) => {
     }
 
     // Costruisci ships dall’associazione via TeamMember
-    const ships = userTeamMembers?.map((tm) => ({
-      id: tm.ship.id,
-      shipModelId: tm.ship.ship_model_id,
-      fleetId: tm.ship.fleet_id,
-      modelCode: tm.ship.model_code,
-      unitName: tm.ship.unit_name,
-      unitCode: tm.ship.unit_code,
-      launchDate: tm.ship.launch_date,
-      deliveryDate: tm.ship.delivery_date,
-      sideShipNumber: tm.ship.Side_ship_number,
-      isLeader: tm.is_leader,
-    })) || [];
+    const ships = userTeamMembers
+      ?.map((tm) => {
+        const ship = tm.team?.ship;
+        if (!ship) return null; // evita errori
+        return {
+          id: ship.id,
+          shipModelId: ship.ship_model_id,
+          fleetId: ship.fleet_id,
+          modelCode: ship.model_code,
+          unitName: ship.unit_name,
+          unitCode: ship.unit_code,
+          launchDate: ship.launch_date,
+          deliveryDate: ship.delivery_date,
+          sideShipNumber: ship.Side_ship_number,
+          isLeader: tm.is_leader,
+        };
+      })
+      .filter(Boolean) || [];
 
     res.json({
       id,

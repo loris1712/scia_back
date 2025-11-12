@@ -41,6 +41,8 @@ const Shipyards = require("./shipyard");
 const shipModel = require("./shipModel");
 const Owner = require("./owner");
 const ESWBS_Glossary = require("./ESWBS_Glossary");
+const MaintenanceGroup = require("./maintenanceGroup");
+const Threshold = require("./Threshold");
 
 /* -------------------------- RELAZIONI OWNER / SHIPYARD -------------------------- */
 Owner.belongsTo(OrganizationCompanyNCAGE, {
@@ -69,24 +71,26 @@ Team.hasMany(User, { as: "teamMembers", foreignKey: "team_id" });
 Team.belongsTo(User, { as: "leader", foreignKey: "team_leader_id" });
 User.hasOne(Team, { as: "managedTeam", foreignKey: "team_leader_id" });
 
+// 🔹 Un team è assegnato a una nave
+Team.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" });
+Ship.hasMany(Team, { foreignKey: "ship_id", as: "shipTeams" });
+
 /* -------------------------- RELAZIONI USER LOGIN / ROLE / SETTINGS -------------------------- */
 User.hasOne(UserLogin, { foreignKey: "user_id", as: "login" });
-UserLogin.belongsTo(User, { foreignKey: "user_id", as: "loginUser" }); // 🔹 alias unico
+UserLogin.belongsTo(User, { foreignKey: "user_id", as: "loginUser" });
 
 User.hasOne(UserRole, { foreignKey: "user_id", as: "role" });
-UserRole.belongsTo(User, { foreignKey: "user_id", as: "roleUser" }); // 🔹 alias unico
+UserRole.belongsTo(User, { foreignKey: "user_id", as: "roleUser" });
 
 User.hasOne(UserSettings, { foreignKey: "user_id", as: "settings" });
-UserSettings.belongsTo(User, { foreignKey: "user_id", as: "settingsUser" }); // 🔹 alias unico
-
+UserSettings.belongsTo(User, { foreignKey: "user_id", as: "settingsUser" });
 
 /* -------------------------- RELAZIONI TEAM MEMBER -------------------------- */
+// 🔹 Relazione solo User ↔ Team (niente Ship)
 User.hasMany(TeamMember, { foreignKey: "user_id", as: "userTeamMembers" });
 Team.hasMany(TeamMember, { foreignKey: "team_id", as: "teamTeamMembers" });
-Ship.hasMany(TeamMember, { foreignKey: "ship_id", as: "shipTeamMembers" });
 TeamMember.belongsTo(User, { foreignKey: "user_id", as: "user" });
 TeamMember.belongsTo(Team, { foreignKey: "team_id", as: "team" });
-TeamMember.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" });
 
 /* -------------------------- RELAZIONI JOB / ELEMENT / SHIP -------------------------- */
 Element.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" });
@@ -97,7 +101,7 @@ JobExecution.belongsTo(Element, { foreignKey: "element_eswbs_instance_id" });
 
 JobStatus.hasMany(JobExecution, { foreignKey: "status_id", as: "jobs" });
 JobExecution.belongsTo(JobStatus, { foreignKey: "status_id", as: "status" });
- 
+
 /* -------------------------- RELAZIONI MAINTENANCE -------------------------- */
 JobExecution.belongsTo(Maintenance_List, {
   foreignKey: "job_id",
@@ -127,52 +131,26 @@ Maintenance_List.belongsTo(ElemetModel, {
 
 /* -------------------------- RELAZIONI ELEMENT ↔ ELEMENT MODEL -------------------------- */
 Element.belongsTo(ElemetModel, {
-  foreignKey: "element_model_id", // o il campo corretto nella tabella Element
+  foreignKey: "element_model_id",
   as: "element_model",
 });
-
 ElemetModel.hasMany(Element, {
   foreignKey: "element_model_id",
   as: "elements",
 });
 
 /* -------------------------- RELAZIONI NOTE ↔ JOB EXECUTION -------------------------- */
-JobExecution.hasMany(VocalNote, {
-  foreignKey: "task_id", // o "job_id" se la colonna si chiama così
-  as: "vocalNotes",
-});
-VocalNote.belongsTo(JobExecution, {
-  foreignKey: "task_id",
-  as: "jobExecution",
-});
+JobExecution.hasMany(VocalNote, { foreignKey: "task_id", as: "vocalNotes" });
+VocalNote.belongsTo(JobExecution, { foreignKey: "task_id", as: "jobExecution" });
 
-JobExecution.hasMany(TextNote, {
-  foreignKey: "task_id",
-  as: "textNotes",
-});
-TextNote.belongsTo(JobExecution, {
-  foreignKey: "task_id",
-  as: "jobExecution",
-});
+JobExecution.hasMany(TextNote, { foreignKey: "task_id", as: "textNotes" });
+TextNote.belongsTo(JobExecution, { foreignKey: "task_id", as: "jobExecution" });
 
-JobExecution.hasMany(PhotographicNote, {
-  foreignKey: "task_id",
-  as: "photographicNotes",
-});
-PhotographicNote.belongsTo(JobExecution, {
-  foreignKey: "task_id",
-  as: "jobExecution",
-}); 
+JobExecution.hasMany(PhotographicNote, { foreignKey: "task_id", as: "photographicNotes" });
+PhotographicNote.belongsTo(JobExecution, { foreignKey: "task_id", as: "jobExecution" });
 
-JobExecution.belongsTo(recurrencyType, {
-  foreignKey: "recurrency_type_id",
-  as: "recurrency_type",
-});
-
-recurrencyType.hasMany(JobExecution, {
-  foreignKey: "recurrency_type_id",
-  as: "job_executions",
-});
+JobExecution.belongsTo(recurrencyType, { foreignKey: "recurrency_type_id", as: "recurrency_type" });
+recurrencyType.hasMany(JobExecution, { foreignKey: "recurrency_type_id", as: "job_executions" });
 
 /* -------------------------- RELAZIONI SCANS / NOTES -------------------------- */
 Scans.belongsTo(Ship, { foreignKey: "ship_id", as: "ship" });
@@ -200,14 +178,8 @@ Shipyards.hasMany(ProjectCommission, {
   as: "projects",
 });
 
-ProjectCommission.hasMany(Ship, {
-  foreignKey: "project_id",
-  as: "ships",
-});
-Ship.belongsTo(ProjectCommission, {
-  foreignKey: "project_id",
-  as: "project",
-});
+ProjectCommission.hasMany(Ship, { foreignKey: "project_id", as: "ships" });
+Ship.belongsTo(ProjectCommission, { foreignKey: "project_id", as: "project" });
 
 /* -------------------------- RELAZIONI PARTS / SPARE -------------------------- */
 Spare.belongsTo(Parts, { foreignKey: "Parts_ID", as: "part" });
@@ -222,15 +194,8 @@ OrganizationCompanyNCAGE.hasMany(Parts, {
   as: "parts",
 });
 
-Readings.belongsTo(ReadingsType, {
-  foreignKey: "reading_type_id",
-  as: "type",
-});
-
-ReadingsType.hasMany(Readings, {
-  foreignKey: "reading_type_id",
-  as: "readings",
-}); 
+Readings.belongsTo(ReadingsType, { foreignKey: "reading_type_id", as: "type" });
+ReadingsType.hasMany(Readings, { foreignKey: "reading_type_id", as: "readings" });
 
 Readings.belongsTo(Element, { foreignKey: "element_id", as: "element" });
 Element.hasMany(Readings, { foreignKey: "element_id", as: "readings" });
@@ -295,6 +260,8 @@ const db = {
   shipModel,
   Owner,
   ESWBS_Glossary,
+  MaintenanceGroup,
+  Threshold
 };
 
 module.exports = db;

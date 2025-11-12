@@ -38,6 +38,11 @@ const ownerAdminRoutes = require("./routes/admin/ownersRoutes");
 const ESWBSRoutes = require("./routes/admin/eswbsRoute");
 const maintenanceAdminRoutes = require("./routes/admin/maintenanceRoutes");
 const organizationRoutes = require("./routes/admin/organizationRoutes");
+const maintenanceLevelRoutes = require("./routes/admin/maintenanceLevelRoutes");
+const rankRoutes = require("./routes/admin/rankRoutes");
+const recurrencyTypeRoutes = require("./routes/admin/recurrencyTypeRoutes");
+const maintenanceGroupRoutes = require("./routes/admin/maintenanceGroupRoutes");
+const thresholdRoutes = require("./routes/admin/thresholdRoutes");
 
 const app = express();
 
@@ -99,6 +104,11 @@ app.use("/api/admin/owners", ownerAdminRoutes);
 app.use("/api/admin/eswbs", ESWBSRoutes);
 app.use("/api/admin/maintenance", maintenanceAdminRoutes);
 app.use("/api/admin/organization", organizationRoutes);
+app.use("/api/admin/maintenanceLevel", maintenanceLevelRoutes);
+app.use("/api/admin/rank", rankRoutes);
+app.use("/api/admin/recurrencyType", recurrencyTypeRoutes);
+app.use("/api/admin/maintenanceGroup", maintenanceGroupRoutes);
+app.use("/api/admin/threshold", thresholdRoutes);
 
 sequelize.sync()
     .then(() => console.log("Database sincronizzato"))
