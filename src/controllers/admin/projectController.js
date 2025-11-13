@@ -12,7 +12,7 @@ exports.getProjects = async (req, res) => {
     console.error("Errore nel recupero commesse:", error);
     return res.status(500).json({ error: "Errore nel recupero commesse" });
   }
-};
+}; 
 
 // 🔹 2️⃣ Crea una nuova commessa
 exports.createProject = async (req, res) => {
