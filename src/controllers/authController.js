@@ -206,7 +206,14 @@ exports.getUserSecuritySettings = async (req, res) => {
 };
 
 exports.updateUserSecuritySettings = async (req, res) => {
-  const { useBiometric, useQuickPin, pin, userId } = req.body;
+  const { 
+    useBiometric, 
+    useQuickPin, 
+    pin, 
+    userId, 
+    oldPassword, 
+    newPassword 
+  } = req.body;
 
   try {
     const user = await UserLogin.findOne({ where: { user_id: userId } });
@@ -215,11 +222,24 @@ exports.updateUserSecuritySettings = async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
+    if (newPassword) {
+      const isValid = await bcrypt.compare(oldPassword, user.password_hash);
+
+      if (!isValid) {
+        return res.status(400).json({ error: "Old password incorrect." });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await user.update({ password_hash: hashedPassword });
+    }
+
+
+    // --- PIN & SECURITY FLAGS ---
     let updateData = {
       biometric_enabled: useBiometric,
-      pin_enabled: useQuickPin
+      pin_enabled: useQuickPin,
     };
-    
+
     if (pin) {
       if (!/^\d{4}$/.test(pin)) {
         return res.status(400).json({ error: "PIN must be exactly 4 digits." });
@@ -231,9 +251,9 @@ exports.updateUserSecuritySettings = async (req, res) => {
     await user.update(updateData);
 
     res.json({ message: "Security settings updated successfully." });
+
   } catch (error) {
     console.error("Error updating security settings:", error);
     res.status(500).json({ error: "Error updating security settings" });
   }
 };
-

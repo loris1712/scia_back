@@ -12,6 +12,7 @@ const multer = require('multer');
 
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { PutObjectCommand } = require("@aws-sdk/client-s3");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -411,46 +412,44 @@ exports.updateProfile = async (req, res) => {
 }; 
 
 exports.uploadProfileImage = async (req, res) => {
-  const userId = req.body.userId;
-  const file = req.file;
-
-  console.log("File ricevuto:", file);
-  console.log("Body ricevuto:", req.body);
-
-  if (!file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
-
-  const fileName = `profile_images/${userId}.jpg`;
-
-  const params = {
-    Bucket: BUCKET_NAME,
-    Key: fileName,
-    Body: file.buffer,
-    ContentType: file.mimetype,
-    ACL: 'public-read'
-  };
-
   try {
-    const uploadResult = await s3.upload(params).promise();
-    const imageUrl = uploadResult.Location;
+    const userId = req.body.userId;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: "Nessun file caricato" });
+    }
+
+    const fileName = `profile_images/${userId}.jpg`;
+
+    // 🔥 Upload usando AWS SDK v3 (senza ACL)
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: fileName,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      })
+    );
+
+    // URL pubblico (senza signed URL)
+    const imageUrl = `https://${BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
 
     const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     await user.update({ profile_image: imageUrl });
 
     res.status(200).json({
-      message: "Immagine caricata con successo e aggiornata nel DB",
+      message: "Immagine profilo aggiornata con successo",
       url: imageUrl,
     });
+
   } catch (error) {
-    console.error("Errore upload su S3 o aggiornamento DB:", error);
+    console.error("Errore upload profilo:", error);
     res.status(500).json({ error: "Errore nel caricamento dell'immagine" });
   }
-};
+}; 
 
 exports.getRanks = async (req, res) => {
   try {
