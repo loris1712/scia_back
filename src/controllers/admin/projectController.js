@@ -1,9 +1,9 @@
-const { ProjectCommission, Ship, Shipyards, shipModel } = require("../../models");
+const { ProjectCommission, Ship, Shipyards,
+   shipModel, JobExecution, Maintenance_List } = require("../../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-// 🔹 1️⃣ Ottieni tutte le commesse
 exports.getProjects = async (req, res) => {
   try {
     const projects = await ProjectCommission.findAll({});
@@ -14,7 +14,6 @@ exports.getProjects = async (req, res) => {
   }
 }; 
 
-// 🔹 2️⃣ Crea una nuova commessa
 exports.createProject = async (req, res) => {
   try {
     const { name, description, shipyardId, ownerId, date_order, date_delivery } = req.body;
@@ -128,3 +127,145 @@ exports.updateProjectById = async (req, res) => {
       .json({ error: "Errore durante l'aggiornamento della commessa" });
   }
 };
+
+exports.createShipModel = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { model_name } = req.body;
+
+    if (!model_name) {
+      return res.status(400).json({ error: "Il nome del modello è obbligatorio" });
+    } 
+
+    // Verifica che la commessa esista
+    const project = await ProjectCommission.findByPk(projectId);
+    if (!project) {
+      return res.status(404).json({ error: "Commessa non trovata" });
+    }
+
+    // Crea il modello nave
+    const newShipModel = await shipModel.create({
+      model_name,
+      commission_id: projectId,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Modello nave creato con successo",
+      model: newShipModel,
+    });
+
+  } catch (error) {
+    console.error("Errore creando modello nave:", error);
+    return res.status(500).json({
+      error: "Errore durante la creazione del modello nave",
+    });
+  }
+};
+
+exports.createShip = async (req, res) => {
+  try {
+    const { modelId } = req.params;
+    const { unit_name, team_id } = req.body;
+
+    if (!unit_name) {
+      return res.status(400).json({ error: "Il nome della nave è obbligatorio" });
+    }
+
+    // Verifica che il modello nave esista
+    const model = await shipModel.findByPk(modelId);
+    if (!model) {
+      return res.status(404).json({ error: "Modello nave non trovato" });
+    }
+
+    // Crea la nave
+    const newShip = await Ship.create({
+      ship_model_id: modelId,
+      unit_name,
+      team: team_id,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Nave creata con successo",
+      ship: newShip,
+    });
+
+  } catch (error) {
+    console.error("Errore durante creazione nave:", error);
+    return res.status(500).json({
+      error: "Errore durante creazione nave",
+    });
+  }
+};
+
+exports.getProjectRuntime = async (req, res) => {
+  try {
+    const { ship_id } = req.params;
+
+    const runtime = await JobExecution.findAll({
+      where: { ship_id }, // filtro corretto
+      include: [
+        {
+          model: Maintenance_List,
+          as: "maintenance_list",
+          required: false
+        }
+      ]
+    });
+
+    return res.json(runtime);
+  } catch (error) {
+    console.error("Errore nel recupero runtime:", error);
+    return res.status(500).json({ error: "Errore nel recupero runtime" });
+  }
+};
+
+exports.startJobExecution = async (req, res) => {
+  try {
+    const { ship_id } = req.params;
+    const { project_id } = req.params;
+
+    const existingJobs = await JobExecution.findOne({ where: { ship_id } });
+
+    if (existingJobs) {
+      return res.status(400).json({
+        error: "Job già avviati per questa nave. Start bloccato."
+      });
+    } 
+
+    const maintenanceList = await Maintenance_List.findAll({
+      where: { id_ship: project_id }
+    });
+
+    if (!maintenanceList.length) {
+      return res.status(404).json({
+        error: "Nessuna maintenance associata alla nave."
+      });
+    }
+
+    // Creazione batch delle entry jobExecution
+    const createdJobs = await Promise.all(
+      maintenanceList.map((m) =>
+        JobExecution.create({
+          job_id: m.id,
+          ship_id,
+          execution_state: "pending",
+          status_id: 1,
+          starting_date: new Date(),
+        })
+      )
+    );
+
+    return res.status(201).json({
+      message: "Job avviati con successo",
+      count: createdJobs.length,
+      jobs: createdJobs,
+    });
+
+  } catch (error) {
+    console.error("Errore avvio jobs:", error);
+    return res.status(500).json({ error: "Errore durante avvio dei job" });
+  }
+};
+

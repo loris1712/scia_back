@@ -6,7 +6,7 @@ const {
   ElemetModel,
 } = require("../../models");
 
-exports.getElementModels = async (req, res) => {
+exports.getMaintenancess = async (req, res) => {
   try {
     const { projectId } = req.query;
 
@@ -54,3 +54,66 @@ exports.getElementModels = async (req, res) => {
       .json({ error: "Errore nel recupero delle manutenzioni" });
   }
 };
+
+exports.createMaintenance = async (req, res) => {
+  try {
+    const { 
+      id_ship, 
+      maintenance_level_id,
+      maintenance_type_id,
+      recurrency_type_id,
+      System_ElementModel_ID,
+      title,
+      description,
+      hours,
+      frequency 
+    } = req.body;
+
+    if (!id_ship || !title) {
+      return res.status(400).json({
+        error: "Campi obbligatori mancanti: id_ship, maintenance_level_id, maintenance_type_id, title"
+      });
+    }
+
+    const newMaintenance = await Maintenance_List.create({
+      id_ship,
+      maintenance_level_id,
+      maintenance_type_id,
+      recurrency_type_id,
+      System_ElementModel_ID,
+      name: title,
+      description: description || null,
+      hours: hours || null,
+      frequency: frequency || null
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Manutenzione creata con successo",
+      maintenance: newMaintenance
+    });
+
+  } catch (error) {
+    console.error("❌ Errore creando manutenzione:", error);
+    return res.status(500).json({
+      error: "Errore durante la creazione della manutenzione"
+    });
+  }
+};
+
+exports.deleteMaintenance = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const maintenance = await Maintenance_List.findByPk(id);
+    if (!maintenance) return res.status(404).json({ error: "Ricambio non trovato" });
+
+    await maintenance.destroy();
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("❌ Errore eliminazione ricambio:", error);
+    return res.status(500).json({ error: "Errore eliminazione ricambio" });
+  }
+};
+

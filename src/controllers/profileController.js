@@ -47,6 +47,7 @@ exports.getProfile = async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
+    // 🔹 Recupero UserLogin + User + Team base
     const userLogin = await UserLogin.findOne({
       where: { user_id: decoded.userId },
       attributes: ["email"],
@@ -54,16 +55,9 @@ exports.getProfile = async (req, res) => {
         model: User,
         as: "user",
         attributes: [
-          "id",
-          "first_name",
-          "last_name",
-          "profile_image",
-          "phone_number",
-          "registration_date",
-          "team_id",
-          "bot_id_ita",
-          "bot_id_ing",
-          "bot_id_esp",
+          "id", "first_name", "last_name", "profile_image",
+          "phone_number", "registration_date", "team_id",
+          "bot_id_ita", "bot_id_ing", "bot_id_esp"
         ],
         include: [
           {
@@ -74,82 +68,96 @@ exports.getProfile = async (req, res) => {
               {
                 model: User,
                 as: "teamLeader",
-                attributes: ["first_name", "last_name"],
+                attributes: ["first_name", "last_name"]
               },
               {
                 model: Ship,
-                as: "ship", // ✅ ora lo include da Team
+                as: "ship",
                 attributes: [
-                  "id",
-                  "ship_model_id",
-                  "fleet_id",
-                  "model_code",
-                  "unit_name",
-                  "unit_code",
-                  "launch_date",
-                  "delivery_date",
-                  "Side_ship_number",
-                ],
-              },
-            ],
-          },
-          {
-            model: TeamMember,
-            as: "userTeamMembers",
-            attributes: ["id", "is_leader"],
-            include: [
-              {
-                model: Team,
-                as: "team",
-                include: [
-                  {
-                    model: Ship,
-                    as: "ship", // ✅ nave associata al team
-                    attributes: [
-                      "id",
-                      "ship_model_id",
-                      "fleet_id",
-                      "model_code",
-                      "unit_name",
-                      "unit_code",
-                      "launch_date",
-                      "delivery_date",
-                      "Side_ship_number",
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
+                  "id", "ship_model_id", "fleet_id",
+                  "model_code", "unit_name", "unit_code",
+                  "launch_date", "delivery_date", "Side_ship_number"
+                ]
+              }
+            ]
+          }
+        ]
+      }
     });
-
 
     if (!userLogin || !userLogin.user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const {
-      id,
-      first_name,
-      last_name,
-      profile_image,
-      phone_number,
-      registration_date,
-      team,
-      bot_id_ita,
-      bot_id_ing,
-      bot_id_esp,
-      userTeamMembers,
-    } = userLogin.user;
-    const { email } = userLogin;
+    const user = userLogin.user;
 
-    const userRole = await UserRole.findOne({ where: { user_id: id } });
+    // -----------------------------------------------------
+    // 🔍 Trova TeamMember → Team → Ship
+    // -----------------------------------------------------
+    const teamMembership = await TeamMember.findOne({
+      where: { user_id: user.id },
+      include: [
+        {
+          model: Team,
+          as: "team",
+          include: [
+            {
+              model: User,
+              as: "teamLeader",
+              attributes: ["id", "first_name", "last_name"]
+            },
+            {
+              model: Ship,
+              as: "ship",
+              attributes: [
+                "id", "ship_model_id", "fleet_id",
+                "model_code", "unit_name", "unit_code",
+                "Side_ship_number"
+              ]
+            }
+          ]
+        }
+      ]
+    });
+
+    let teamInfo = null;
+
+    if (teamMembership) {
+      teamInfo = {
+        teamMemberId: teamMembership.id,
+        userId: teamMembership.user_id,
+        teamId: teamMembership.team?.id || null,
+        teamName: teamMembership.team?.name || null,
+        teamLeader: teamMembership.team?.teamLeader
+          ? {
+              id: teamMembership.team.teamLeader.id,
+              firstName: teamMembership.team.teamLeader.first_name,
+              lastName: teamMembership.team.teamLeader.last_name
+            }
+          : null,
+        assignedShip: teamMembership.team?.ship
+          ? {
+              id: teamMembership.team.ship.id,
+              unitName: teamMembership.team.ship.unit_name,
+              unitCode: teamMembership.team.ship.unit_code,
+              shipModelId: teamMembership.team.ship.ship_model_id,
+              sideShipNumber: teamMembership.team.ship.Side_ship_number
+            }
+          : null
+      };
+    }
+
+    // -----------------------------------------------------
+    // 🔖 Recupera ruolo utente
+    // -----------------------------------------------------
+    const userRole = await UserRole.findOne({ where: { user_id: user.id } });
     if (!userRole) {
       return res.status(404).json({ error: "Role not found" });
     }
 
+    // -----------------------------------------------------
+    // 🔗 Signed URL per immagine profilo
+    // -----------------------------------------------------
     const extractS3Key = (url) => {
       if (!url) return null;
       try {
@@ -161,65 +169,42 @@ exports.getProfile = async (req, res) => {
     };
 
     let signedProfileImageUrl = null;
-    if (profile_image) {
-      const profileImageKey = extractS3Key(profile_image);
-      const command = new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: profileImageKey,
-      });
 
+    if (user.profile_image) {
+      const key = extractS3Key(user.profile_image);
       try {
-        signedProfileImageUrl = await getSignedUrl(s3Client, command, {
-          expiresIn: 3600,
-        });
-      } catch (err) {
-        console.warn("Errore generando URL firmato per profile_image:", err);
+        signedProfileImageUrl = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key }),
+          { expiresIn: 3600 }
+        );
+      } catch {
+        console.warn("Errore generando URL immagine profilo");
       }
     }
 
-    // Costruisci ships dall’associazione via TeamMember
-    const ships = userTeamMembers
-      ?.map((tm) => {
-        const ship = tm.team?.ship;
-        if (!ship) return null; // evita errori
-        return {
-          id: ship.id,
-          shipModelId: ship.ship_model_id,
-          fleetId: ship.fleet_id,
-          modelCode: ship.model_code,
-          unitName: ship.unit_name,
-          unitCode: ship.unit_code,
-          launchDate: ship.launch_date,
-          deliveryDate: ship.delivery_date,
-          sideShipNumber: ship.Side_ship_number,
-          isLeader: tm.is_leader,
-        };
-      })
-      .filter(Boolean) || [];
-
-    res.json({
-      id,
-      firstName: first_name,
-      lastName: last_name,
-      rank: userRole.rank,
-      type: userRole.type,
+    // -----------------------------------------------------
+    // 📤 Risposta finale
+    // -----------------------------------------------------
+    return res.json({
+      id: user.id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      email: userLogin.email,
       role: userRole.role_name || "N/A",
+      type: userRole.type,
+      rank: userRole.rank,
       profileImage: signedProfileImageUrl,
-      email,
-      phoneNumber: phone_number,
-      registrationDate: registration_date,
-      bot_id_ing,
-      bot_id_ita,
-      bot_id_esp,
-      team: team ? { id: team.id, name: team.name } : null,
-      teamLeader: team?.teamLeader
-        ? {
-            firstName: team.teamLeader.first_name,
-            lastName: team.teamLeader.last_name,
-          }
-        : null,
-      ships,
+      phoneNumber: user.phone_number,
+      registrationDate: user.registration_date,
+      botIds: {
+        ita: user.bot_id_ita,
+        ing: user.bot_id_ing,
+        esp: user.bot_id_esp
+      },
+      teamInfo
     });
+
   } catch (error) {
     console.error("Error verifying token:", error);
     res.status(401).json({ error: "Invalid token" });

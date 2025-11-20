@@ -63,6 +63,7 @@ OrganizationCompanyNCAGE.hasMany(Shipyards, {
   as: "shipyards",
 });
 
+
 /* -------------------------- RELAZIONI USER / TEAM -------------------------- */
 User.belongsTo(Team, { as: "userTeam", foreignKey: "team_id" });
 Team.hasMany(User, { as: "teamMembers", foreignKey: "team_id" });

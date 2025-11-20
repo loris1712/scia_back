@@ -215,8 +215,11 @@ exports.updateUserSecuritySettings = async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
-    let updateData = { use_biometric: useBiometric, use_quick_pin: useQuickPin };
-
+    let updateData = {
+      biometric_enabled: useBiometric,
+      pin_enabled: useQuickPin
+    };
+    
     if (pin) {
       if (!/^\d{4}$/.test(pin)) {
         return res.status(400).json({ error: "PIN must be exactly 4 digits." });
