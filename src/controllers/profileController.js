@@ -449,7 +449,7 @@ exports.uploadProfileImage = async (req, res) => {
     console.error("Errore upload profilo:", error);
     res.status(500).json({ error: "Errore nel caricamento dell'immagine" });
   }
-}; 
+};  
 
 exports.getRanks = async (req, res) => {
   try {
