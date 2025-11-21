@@ -27,6 +27,10 @@ const ProjectCommission = sequelize.define('ProjectCommission', {
     type: DataTypes.INTEGER,
     allowNull: true
   },
+  houseofride: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
   shipyard_builder_id: {
     type: DataTypes.INTEGER,
     allowNull: true
